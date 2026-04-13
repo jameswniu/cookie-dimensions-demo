@@ -3,1607 +3,689 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Cookie Dimensions Explorer</title>
+<title>Meta Tracking Deep Explorer</title>
 <style>
-  :root {
-    --bg: #0a0a0f;
-    --surface: #12121a;
-    --surface2: #1a1a26;
-    --surface3: #222233;
-    --border: #2a2a3d;
-    --text: #e0e0f0;
-    --text-dim: #8888aa;
-    --accent: #6366f1;
-    --accent-glow: rgba(99,102,241,.25);
-    --meta-blue: #1877f2;
-    --meta-glow: rgba(24,119,242,.3);
-    --google-red: #ea4335;
-    --amazon-orange: #ff9900;
-    --danger: #ef4444;
-    --warn: #f59e0b;
-    --safe: #22c55e;
-    --info: #3b82f6;
-    --purple: #a855f7;
-    --pink: #ec4899;
-    --cyan: #06b6d4;
-    --font: 'SF Mono', 'Cascadia Code', 'Fira Code', 'JetBrains Mono', monospace;
-    --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  }
+:root{--bg:#0b0b16;--s1:#111122;--s2:#171730;--s3:#1e1e3a;--border:#2a2a48;--text:#d4d4e8;--dim:#6e6e9a;--gold:#e8b931;--gold-dim:rgba(232,185,49,.15);--gold-border:rgba(232,185,49,.4);--meta:#1877f2;--meta-dim:rgba(24,119,242,.12);--google:#ea4335;--danger:#ef4444;--warn:#f59e0b;--safe:#22c55e;--info:#3b82f6;--purple:#a855f7;--pink:#ec4899;--cyan:#06b6d4;--green-tag:#1a5c2e;--green-tag-text:#4ade80;--red-tag:#5c1a1a;--red-tag-text:#f87171;--blue-tag:#1a2a5c;--blue-tag-text:#60a5fa;--font:'SF Mono','Cascadia Code','Fira Code','JetBrains Mono',monospace;--sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
+*{margin:0;padding:0;box-sizing:border-box}
+html{font-size:13px}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:var(--s1)}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
 
-  * { margin:0; padding:0; box-sizing:border-box; }
+/* Header */
+.hdr{text-align:center;padding:2rem 2rem 1rem;background:linear-gradient(180deg,rgba(232,185,49,.04),transparent)}
+.hdr h1{font-family:var(--font);font-size:1.5rem;font-weight:800;color:var(--gold);font-style:italic}
+.hdr p{color:var(--dim);font-size:.8rem;margin-top:.3rem}
 
-  html { font-size:14px; }
+/* Scenario Selector */
+.scenarios{display:flex;align-items:center;gap:.5rem;padding:.8rem 2rem;border-bottom:1px solid var(--border);background:var(--s1);flex-wrap:wrap}
+.scenarios label{font-size:.65rem;color:var(--dim);text-transform:uppercase;letter-spacing:.06em;font-weight:700;margin-right:.3rem}
+.scn-btn{padding:.4rem .8rem;border-radius:5px;border:1px solid var(--border);background:transparent;color:var(--dim);font-family:var(--font);font-size:.65rem;cursor:pointer;transition:all .2s}
+.scn-btn:hover{border-color:var(--gold);color:var(--text)}
+.scn-btn.active{background:var(--gold);border-color:var(--gold);color:#000;font-weight:700}
+.scn-url{flex:1;min-width:200px;padding:.4rem .7rem;border-radius:5px;border:1px solid var(--border);background:var(--s2);color:var(--text);font-family:var(--font);font-size:.7rem}
+.scn-url:focus{outline:none;border-color:var(--gold)}
+.scn-url::placeholder{color:var(--dim)}
+.scn-go{padding:.4rem .8rem;border-radius:5px;border:1px solid var(--gold);background:var(--gold-dim);color:var(--gold);font-family:var(--font);font-size:.65rem;cursor:pointer;font-weight:700}
+.scn-go:hover{background:var(--gold);color:#000}
 
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: var(--sans);
-    min-height: 100vh;
-    overflow-x: hidden;
-  }
+/* Step Bar */
+.steps{display:flex;align-items:center;justify-content:center;padding:1rem 2rem;gap:0;background:var(--s1);border-bottom:1px solid var(--border)}
+.step-item{display:flex;align-items:center}
+.step-box{padding:.5rem 1.2rem;border:2px solid var(--border);border-radius:8px;text-align:center;cursor:pointer;transition:all .2s;min-width:100px;background:transparent}
+.step-box:hover{border-color:var(--dim)}
+.step-box.active{border-color:var(--gold);background:var(--gold);color:#000}
+.step-box.done{border-color:var(--gold-border);background:var(--gold-dim)}
+.step-num{font-family:var(--font);font-size:.65rem;font-weight:800;display:block}
+.step-box.active .step-num{color:#000}
+.step-box.done .step-num{color:var(--gold)}
+.step-label{font-size:.7rem;margin-top:.15rem;display:block}
+.step-box.active .step-label{color:#000;font-weight:600}
+.step-box.done .step-label{color:var(--gold)}
+.step-connector{width:28px;height:2px;background:var(--border);position:relative;display:flex;align-items:center;justify-content:center}
+.step-connector.done{background:var(--gold-border)}
+.step-connector .conn-badge{position:absolute;font-family:var(--font);font-size:.5rem;color:var(--gold);background:var(--s1);padding:0 .2rem;white-space:nowrap}
 
-  /* ── Scrollbar ── */
-  ::-webkit-scrollbar { width:6px; height:6px; }
-  ::-webkit-scrollbar-track { background: var(--surface); }
-  ::-webkit-scrollbar-thumb { background: var(--border); border-radius:3px; }
-  ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+/* 4-Panel Grid */
+.grid{display:grid;grid-template-columns:1fr 1fr;margin:0 1.5rem}
+.panel{border:1px solid var(--border);background:var(--s1);min-height:280px;overflow:hidden}
+.panel-hdr{display:flex;align-items:center;justify-content:space-between;padding:.6rem 1rem;border-bottom:1px solid var(--border);background:var(--s2)}
+.panel-hdr .ph-left{display:flex;align-items:center;gap:.4rem;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+.panel-hdr .ph-right{font-size:.6rem;color:var(--dim);text-transform:uppercase;letter-spacing:.04em}
+.panel-hdr .ph-icon{font-size:.9rem}
+.ph-perception{color:var(--pink)}
+.ph-structure{color:var(--cyan)}
+.ph-source{color:var(--purple)}
+.ph-time{color:var(--warn)}
+.panel-body{padding:.8rem 1rem;max-height:340px;overflow-y:auto}
 
-  /* ── Header ── */
-  .header {
-    padding: 2rem 3rem 1.5rem;
-    border-bottom: 1px solid var(--border);
-    background: linear-gradient(180deg, rgba(99,102,241,.06) 0%, transparent 100%);
-  }
-  .header h1 {
-    font-family: var(--font);
-    font-size: 1.6rem;
-    font-weight: 700;
-    letter-spacing: -.02em;
-    background: linear-gradient(135deg, #6366f1, #a855f7, #ec4899);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-  }
-  .header p { color: var(--text-dim); margin-top:.4rem; font-size:.9rem; }
+/* Fake Browser */
+.browser{border:1px solid var(--border);border-radius:8px;overflow:hidden;background:#0a0a14;margin-bottom:.5rem}
+.browser-chrome{display:flex;align-items:center;gap:.5rem;padding:.4rem .7rem;background:var(--s2);border-bottom:1px solid var(--border)}
+.dot{width:8px;height:8px;border-radius:50%}
+.dot-r{background:#ff5f57}.dot-y{background:#febc2e}.dot-g{background:#28c840}
+.browser-url{flex:1;font-family:var(--font);font-size:.6rem;color:var(--dim);background:var(--s3);padding:.25rem .5rem;border-radius:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.browser-body{padding:.8rem;font-size:.75rem;line-height:1.5;min-height:120px}
+.browser-body h3{font-size:.85rem;font-weight:700;margin-bottom:.3rem;color:var(--text)}
+.browser-body .subtitle{color:var(--dim);font-size:.7rem;margin-bottom:.6rem}
+.browser-body .event-card{padding:.4rem .6rem;border:1px solid var(--border);border-radius:5px;margin-bottom:.3rem;font-size:.7rem;transition:all .2s}
+.browser-body .event-card:hover{border-color:var(--dim)}
+.browser-body .event-card.highlight{border-color:var(--gold);background:rgba(232,185,49,.06)}
+.browser-body .event-card .ec-title{font-weight:600;color:var(--text)}
+.browser-body .event-card .ec-sub{color:var(--dim);font-size:.6rem}
+.browser-body .ec-warn{color:var(--danger);font-size:.6rem;font-weight:600}
+.browser-body .cta-btn{display:block;width:100%;padding:.5rem;border-radius:5px;background:var(--danger);color:#fff;text-align:center;font-weight:700;font-size:.75rem;margin-top:.5rem;border:none;cursor:default}
+.browser-body .cta-btn.gold{background:var(--gold);color:#000}
+.browser-body .form-field{display:block;width:100%;padding:.35rem .5rem;border:1px solid var(--border);border-radius:4px;background:var(--s3);color:var(--dim);font-size:.65rem;margin-bottom:.3rem;font-family:var(--sans)}
+.browser-body .checkout-row{display:flex;justify-content:space-between;font-size:.7rem;padding:.2rem 0}
+.browser-body .checkout-total{font-weight:700;border-top:1px solid var(--border);padding-top:.3rem;margin-top:.3rem}
+.browser-footnote{font-size:.65rem;color:var(--dim);font-style:italic;padding:.4rem .8rem;border-top:1px solid rgba(42,42,72,.3)}
 
-  /* ── Dimension Tabs ── */
-  .dim-tabs {
-    display: flex;
-    gap: .5rem;
-    padding: 1rem 3rem;
-    border-bottom: 1px solid var(--border);
-    background: var(--surface);
-    position: sticky;
-    top: 0;
-    z-index: 100;
-  }
-  .dim-tab {
-    padding: .6rem 1.2rem;
-    border-radius: 8px;
-    border: 1px solid var(--border);
-    background: transparent;
-    color: var(--text-dim);
-    font-family: var(--font);
-    font-size: .8rem;
-    cursor: pointer;
-    transition: all .2s;
-    display: flex;
-    align-items: center;
-    gap: .5rem;
-  }
-  .dim-tab:hover { border-color: var(--accent); color: var(--text); }
-  .dim-tab.active {
-    background: var(--accent);
-    border-color: var(--accent);
-    color: #fff;
-    box-shadow: 0 0 20px var(--accent-glow);
-  }
-  .dim-tab .tab-icon { font-size: 1rem; }
-  .dim-tab .tab-count {
-    background: rgba(255,255,255,.15);
-    padding: .1rem .45rem;
-    border-radius: 4px;
-    font-size: .7rem;
-  }
+/* Cookie Cards */
+.ck-card{border:1px solid var(--border);border-radius:6px;padding:.6rem .8rem;margin-bottom:.5rem;background:var(--s2);transition:all .3s}
+.ck-card.new{border-color:var(--cyan);background:rgba(6,182,212,.04)}
+.ck-header{display:flex;align-items:center;gap:.5rem;margin-bottom:.3rem}
+.ck-name{font-family:var(--font);font-size:.75rem;font-weight:700;color:var(--gold)}
+.ck-value{font-family:var(--font);font-size:.6rem;color:var(--dim);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ck-badge{font-family:var(--font);font-size:.55rem;font-weight:800;padding:.15rem .4rem;border-radius:3px;text-transform:uppercase;flex-shrink:0}
+.ck-created{background:rgba(6,182,212,.15);color:var(--cyan)}
+.ck-read{background:rgba(232,185,49,.15);color:var(--gold)}
+.ck-desc{font-size:.7rem;color:var(--dim);line-height:1.4}
 
-  /* ── Main Layout ── */
-  .main { display: flex; min-height: calc(100vh - 140px); }
+/* Network Requests */
+.nr-item{margin-bottom:.6rem;padding-bottom:.6rem;border-bottom:1px solid rgba(42,42,72,.3)}
+.nr-item:last-child{border-bottom:none}
+.nr-header{display:flex;align-items:center;gap:.4rem;margin-bottom:.3rem}
+.nr-badge{font-family:var(--font);font-size:.55rem;font-weight:800;padding:.15rem .4rem;border-radius:3px;text-transform:uppercase}
+.nr-send{background:rgba(168,85,247,.2);color:var(--purple)}
+.nr-get{background:rgba(59,130,246,.15);color:var(--info)}
+.nr-type{font-size:.7rem;font-weight:700;color:var(--text)}
+.nr-url{font-family:var(--font);font-size:.6rem;color:var(--dim);word-break:break-all}
+.nr-params{display:flex;flex-wrap:wrap;gap:.3rem;margin-top:.3rem}
+.nr-param{font-family:var(--font);font-size:.55rem;padding:.15rem .4rem;border-radius:3px}
+.nr-param-r{background:var(--red-tag);color:var(--red-tag-text)}
+.nr-param-g{background:var(--green-tag);color:var(--green-tag-text)}
+.nr-param-b{background:var(--blue-tag);color:var(--blue-tag-text)}
+.nr-param-y{background:rgba(232,185,49,.12);color:var(--gold)}
+.nr-note{font-size:.6rem;color:var(--dim);font-style:italic;margin-top:.3rem}
 
-  .sidebar {
-    width: 320px;
-    min-width: 320px;
-    border-right: 1px solid var(--border);
-    background: var(--surface);
-    overflow-y: auto;
-    max-height: calc(100vh - 140px);
-    position: sticky;
-    top: 60px;
-  }
+/* Timeline */
+.tl-item{display:flex;gap:.8rem;margin-bottom:.8rem;position:relative}
+.tl-dot-col{display:flex;flex-direction:column;align-items:center;width:12px;flex-shrink:0}
+.tl-dot{width:10px;height:10px;border-radius:50%;border:2px solid var(--border);background:var(--s2);flex-shrink:0;z-index:1}
+.tl-dot.active{border-color:var(--gold);background:var(--gold)}
+.tl-dot.meta{border-color:var(--meta);background:var(--meta)}
+.tl-dot.danger{border-color:var(--danger);background:var(--danger)}
+.tl-line{width:2px;flex:1;background:var(--border);margin-top:2px}
+.tl-body{flex:1;padding-bottom:.3rem}
+.tl-time{font-family:var(--font);font-size:.55rem;color:var(--dim);margin-bottom:.15rem}
+.tl-title{font-size:.75rem;font-weight:700;color:var(--text);margin-bottom:.2rem}
+.tl-desc{font-size:.65rem;color:var(--dim);line-height:1.4;margin-bottom:.3rem}
+.tl-tags{display:flex;gap:.3rem;flex-wrap:wrap}
+.tl-tag{font-family:var(--font);font-size:.5rem;padding:.12rem .35rem;border-radius:3px;font-weight:600}
+.tl-tag-site{background:var(--green-tag);color:var(--green-tag-text)}
+.tl-tag-meta{background:var(--red-tag);color:var(--red-tag-text)}
+.tl-tag-ig{background:rgba(168,85,247,.2);color:var(--purple)}
 
-  .content {
-    flex: 1;
-    padding: 2rem 3rem;
-    overflow-y: auto;
-  }
+/* Meta Knows Bar */
+.meta-bar{margin:0 1.5rem;border:2px solid var(--gold-border);border-radius:8px;padding:.8rem 1rem;background:rgba(232,185,49,.04)}
+.meta-bar-title{font-family:var(--font);font-size:.65rem;font-weight:800;color:var(--gold);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.5rem}
+.meta-tags{display:flex;flex-wrap:wrap;gap:.3rem}
+.meta-tag{font-family:var(--font);font-size:.6rem;padding:.2rem .5rem;border-radius:4px;background:var(--s3);color:var(--dim);border:1px solid var(--border);transition:all .3s}
+.meta-tag.new{background:rgba(232,185,49,.1);border-color:var(--gold-border);color:var(--gold)}
+.meta-tag.danger{background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.3);color:var(--red-tag-text)}
 
-  /* ── Cookie List (sidebar) ── */
-  .cookie-list-header {
-    padding: 1rem 1.2rem;
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-  .cookie-list-header h3 { font-size: .85rem; color: var(--text-dim); font-weight: 600; text-transform: uppercase; letter-spacing:.05em; }
+/* Navigation */
+.nav{display:flex;justify-content:center;gap:1rem;padding:1.5rem 2rem 2rem;align-items:center}
+.nav-btn{padding:.6rem 1.5rem;border-radius:6px;font-family:var(--font);font-size:.75rem;font-weight:700;cursor:pointer;transition:all .2s;border:none}
+.nav-back{background:var(--s3);color:var(--dim);border:1px solid var(--border)}
+.nav-back:hover{border-color:var(--dim);color:var(--text)}
+.nav-next{background:var(--gold);color:#000}
+.nav-next:hover{box-shadow:0 0 20px rgba(232,185,49,.3)}
+.nav-btn:disabled{opacity:.3;cursor:default}
 
-  .cookie-search {
-    width: 100%;
-    padding: .5rem 1rem;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    color: var(--text);
-    font-family: var(--font);
-    font-size: .8rem;
-    margin: .8rem 1.2rem;
-    width: calc(100% - 2.4rem);
-  }
-  .cookie-search:focus { outline:none; border-color: var(--accent); }
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.fade-in{animation:fadeIn .35s ease}
 
-  .cookie-item {
-    padding: .8rem 1.2rem;
-    border-bottom: 1px solid rgba(42,42,61,.5);
-    cursor: pointer;
-    transition: all .15s;
-    position: relative;
-  }
-  .cookie-item:hover { background: var(--surface2); }
-  .cookie-item.active { background: var(--surface3); border-left: 3px solid var(--accent); }
-  .cookie-item.meta-highlight {
-    border-left: 3px solid var(--meta-blue);
-    background: rgba(24,119,242,.05);
-  }
-  .cookie-item.meta-highlight.active {
-    background: rgba(24,119,242,.12);
-    border-left: 3px solid var(--meta-blue);
-    box-shadow: inset 0 0 30px var(--meta-glow);
-  }
-  .cookie-name {
-    font-family: var(--font);
-    font-size: .8rem;
-    font-weight: 600;
-    color: var(--text);
-    display: flex;
-    align-items: center;
-    gap: .4rem;
-  }
-  .cookie-domain { font-size: .7rem; color: var(--text-dim); margin-top:.2rem; }
-  .cookie-badges { display: flex; gap:.3rem; margin-top:.4rem; flex-wrap: wrap; }
-
-  .badge {
-    font-size: .6rem;
-    padding: .15rem .4rem;
-    border-radius: 3px;
-    font-family: var(--font);
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: .03em;
-  }
-  .badge-meta { background: rgba(24,119,242,.2); color: var(--meta-blue); }
-  .badge-google { background: rgba(234,67,53,.15); color: var(--google-red); }
-  .badge-amazon { background: rgba(255,153,0,.15); color: var(--amazon-orange); }
-  .badge-tracker { background: rgba(239,68,68,.15); color: var(--danger); }
-  .badge-analytics { background: rgba(168,85,247,.15); color: var(--purple); }
-  .badge-functional { background: rgba(34,197,94,.15); color: var(--safe); }
-  .badge-necessary { background: rgba(59,130,246,.15); color: var(--info); }
-  .badge-session { background: rgba(6,182,212,.15); color: var(--cyan); }
-  .badge-persistent { background: rgba(245,158,11,.15); color: var(--warn); }
-  .badge-httponly { background: rgba(236,72,153,.15); color: var(--pink); }
-  .badge-3p { background: rgba(239,68,68,.2); color: var(--danger); }
-  .badge-1p { background: rgba(34,197,94,.15); color: var(--safe); }
-
-  /* ── Detail Panel ── */
-  .detail-empty {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 60vh;
-    color: var(--text-dim);
-    text-align: center;
-  }
-  .detail-empty .icon { font-size: 4rem; margin-bottom: 1rem; opacity:.3; }
-
-  .detail-panel { animation: fadeIn .3s ease; }
-  @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
-
-  .detail-header {
-    display: flex;
-    align-items: flex-start;
-    gap: 1rem;
-    margin-bottom: 2rem;
-    padding-bottom: 1.5rem;
-    border-bottom: 1px solid var(--border);
-  }
-  .detail-header .source-icon {
-    width: 48px; height: 48px;
-    border-radius: 12px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 1.4rem;
-    flex-shrink: 0;
-  }
-  .detail-header .source-icon.meta { background: rgba(24,119,242,.15); }
-  .detail-header .source-icon.google { background: rgba(234,67,53,.1); }
-  .detail-header .source-icon.amazon { background: rgba(255,153,0,.1); }
-  .detail-header .source-icon.other { background: var(--surface3); }
-
-  .detail-header h2 {
-    font-family: var(--font);
-    font-size: 1.3rem;
-    font-weight: 700;
-  }
-  .detail-header .domain-label { color: var(--text-dim); font-size:.85rem; }
-
-  /* ── Dimension Cards ── */
-  .dim-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 1rem;
-    margin-bottom: 2rem;
-  }
-  .dim-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 1.2rem;
-    transition: all .2s;
-  }
-  .dim-card:hover { border-color: var(--accent); box-shadow: 0 0 20px rgba(99,102,241,.08); }
-  .dim-card h4 {
-    font-size: .7rem;
-    text-transform: uppercase;
-    letter-spacing: .06em;
-    color: var(--text-dim);
-    margin-bottom: .8rem;
-    display: flex;
-    align-items: center;
-    gap: .4rem;
-  }
-  .dim-card .value {
-    font-family: var(--font);
-    font-size: 1.1rem;
-    font-weight: 600;
-  }
-  .dim-card .sub { color: var(--text-dim); font-size:.75rem; margin-top:.3rem; line-height:1.4; }
-
-  /* ── Raw Value Display ── */
-  .raw-block {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 1rem;
-    margin-bottom: 1.5rem;
-  }
-  .raw-block h4 {
-    font-size: .7rem;
-    text-transform: uppercase;
-    letter-spacing: .06em;
-    color: var(--text-dim);
-    margin-bottom: .6rem;
-  }
-  .raw-value {
-    font-family: var(--font);
-    font-size: .8rem;
-    word-break: break-all;
-    color: var(--warn);
-    background: var(--surface);
-    padding: .6rem .8rem;
-    border-radius: 6px;
-    max-height: 120px;
-    overflow-y: auto;
-    line-height: 1.5;
-  }
-  .decoded-value { color: var(--cyan); }
-
-  /* ── Anatomy Diagram ── */
-  .anatomy {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 1.5rem;
-    margin-bottom: 1.5rem;
-  }
-  .anatomy h3 {
-    font-size: .85rem;
-    font-weight: 600;
-    margin-bottom: 1rem;
-    display: flex;
-    align-items: center;
-    gap: .5rem;
-  }
-  .anatomy-row {
-    display: flex;
-    align-items: center;
-    padding: .5rem 0;
-    border-bottom: 1px solid rgba(42,42,61,.4);
-    gap: 1rem;
-  }
-  .anatomy-row:last-child { border-bottom: none; }
-  .anatomy-label {
-    font-family: var(--font);
-    font-size: .75rem;
-    color: var(--text-dim);
-    width: 110px;
-    flex-shrink: 0;
-    text-align: right;
-  }
-  .anatomy-val {
-    font-family: var(--font);
-    font-size: .8rem;
-    flex: 1;
-  }
-  .anatomy-indicator {
-    width: 8px; height: 8px;
-    border-radius: 50%;
-    flex-shrink: 0;
-  }
-  .ind-green { background: var(--safe); box-shadow: 0 0 6px rgba(34,197,94,.4); }
-  .ind-red { background: var(--danger); box-shadow: 0 0 6px rgba(239,68,68,.4); }
-  .ind-yellow { background: var(--warn); box-shadow: 0 0 6px rgba(245,158,11,.4); }
-  .ind-blue { background: var(--info); box-shadow: 0 0 6px rgba(59,130,246,.4); }
-
-  /* ── Timeline ── */
-  .timeline-bar {
-    height: 32px;
-    background: var(--surface2);
-    border-radius: 6px;
-    position: relative;
-    overflow: hidden;
-    margin: .6rem 0;
-  }
-  .timeline-fill {
-    height: 100%;
-    border-radius: 6px;
-    position: absolute;
-    left: 0;
-    top: 0;
-    display: flex;
-    align-items: center;
-    padding-left: .8rem;
-    font-family: var(--font);
-    font-size: .7rem;
-    color: #fff;
-    font-weight: 600;
-    white-space: nowrap;
-  }
-
-  /* ── Privacy Score ── */
-  .privacy-score {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    padding: 1.2rem;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    margin-bottom: 1.5rem;
-  }
-  .score-ring {
-    width: 64px; height: 64px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-family: var(--font);
-    font-size: 1.3rem;
-    font-weight: 700;
-    flex-shrink: 0;
-    position: relative;
-  }
-  .score-ring::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    border-radius: 50%;
-    border: 3px solid;
-    opacity: .3;
-  }
-  .score-high { color: var(--danger); }
-  .score-high::before { border-color: var(--danger); }
-  .score-med { color: var(--warn); }
-  .score-med::before { border-color: var(--warn); }
-  .score-low { color: var(--safe); }
-  .score-low::before { border-color: var(--safe); }
-
-  /* ── Perception Viz ── */
-  .perception-layers {
-    display: flex;
-    flex-direction: column;
-    gap: .3rem;
-  }
-  .perc-layer {
-    display: flex;
-    align-items: center;
-    gap: .8rem;
-    padding: .6rem .8rem;
-    border-radius: 6px;
-    background: var(--surface2);
-    font-size: .8rem;
-  }
-  .perc-layer .perc-icon { font-size: 1.1rem; width: 24px; text-align: center; }
-  .perc-layer .perc-label { flex: 1; }
-  .perc-layer .perc-status {
-    font-family: var(--font);
-    font-size: .7rem;
-    font-weight: 600;
-    padding: .15rem .5rem;
-    border-radius: 4px;
-  }
-  .perc-visible { background: rgba(239,68,68,.12); color: var(--danger); }
-  .perc-hidden { background: rgba(34,197,94,.12); color: var(--safe); }
-
-  /* ── Aggregate stats bar ── */
-  .stats-bar {
-    display: flex;
-    gap: 1.5rem;
-    padding: 1rem 3rem;
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
-    flex-wrap: wrap;
-  }
-  .stat-item {
-    display: flex;
-    align-items: center;
-    gap: .4rem;
-  }
-  .stat-num {
-    font-family: var(--font);
-    font-size: 1.1rem;
-    font-weight: 700;
-  }
-  .stat-label { font-size: .75rem; color: var(--text-dim); }
-
-  /* ── Tracking Flow Diagram ── */
-  .flow-diagram {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 1.5rem;
-    margin-bottom: 1.5rem;
-  }
-  .flow-diagram h3 { font-size:.85rem; font-weight:600; margin-bottom:1rem; }
-  .flow-steps {
-    display: flex;
-    align-items: center;
-    gap: .5rem;
-    flex-wrap: wrap;
-  }
-  .flow-step {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: .6rem 1rem;
-    font-size: .75rem;
-    text-align: center;
-    min-width: 100px;
-  }
-  .flow-step.highlighted {
-    border-color: var(--meta-blue);
-    background: rgba(24,119,242,.08);
-    box-shadow: 0 0 15px var(--meta-glow);
-  }
-  .flow-arrow { color: var(--text-dim); font-size: 1.2rem; }
-  .flow-step strong { display:block; font-family:var(--font); font-size:.7rem; margin-bottom:.2rem; }
-
-  /* ── Section Headers ── */
-  .section-title {
-    font-size: 1rem;
-    font-weight: 700;
-    margin-bottom: 1rem;
-    display: flex;
-    align-items: center;
-    gap: .5rem;
-    padding-bottom: .5rem;
-    border-bottom: 1px solid var(--border);
-  }
-
-  /* ── Overview Dashboard (when no cookie selected, per dimension) ── */
-  .overview-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: 1rem;
-    margin-bottom: 2rem;
-  }
-  .overview-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 1.2rem;
-    text-align: center;
-    cursor: pointer;
-    transition: all .2s;
-  }
-  .overview-card:hover { border-color: var(--accent); transform: translateY(-2px); }
-  .overview-card .big-num {
-    font-family: var(--font);
-    font-size: 2.4rem;
-    font-weight: 700;
-    line-height: 1;
-    margin-bottom: .4rem;
-  }
-  .overview-card .card-label {
-    font-size: .75rem;
-    color: var(--text-dim);
-    text-transform: uppercase;
-    letter-spacing: .04em;
-  }
-
-  /* ── Chart bars ── */
-  .bar-chart { margin: 1rem 0; }
-  .bar-row {
-    display: flex;
-    align-items: center;
-    margin-bottom: .4rem;
-    gap: .8rem;
-  }
-  .bar-label {
-    font-family: var(--font);
-    font-size: .7rem;
-    width: 120px;
-    text-align: right;
-    color: var(--text-dim);
-    flex-shrink: 0;
-  }
-  .bar-track {
-    flex: 1;
-    height: 20px;
-    background: var(--surface2);
-    border-radius: 4px;
-    overflow: hidden;
-    position: relative;
-  }
-  .bar-fill {
-    height: 100%;
-    border-radius: 4px;
-    display: flex;
-    align-items: center;
-    padding-left: .5rem;
-    font-family: var(--font);
-    font-size: .65rem;
-    color: #fff;
-    font-weight: 600;
-    transition: width .6s ease;
-  }
-
-  /* ── Fingerprint section ── */
-  .fingerprint-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-    gap: .5rem;
-  }
-  .fp-cell {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: .6rem;
-    font-family: var(--font);
-    font-size: .65rem;
-    text-align: center;
-    transition: all .2s;
-  }
-  .fp-cell:hover { border-color: var(--accent); }
-  .fp-cell .fp-label { color: var(--text-dim); margin-bottom:.2rem; font-size:.6rem; text-transform:uppercase; }
-  .fp-cell .fp-val { font-weight: 600; word-break: break-all; }
-
-  /* ── Responsive ── */
-  @media (max-width: 900px) {
-    .main { flex-direction: column; }
-    .sidebar { width: 100%; min-width: unset; max-height: 40vh; position: static; }
-    .content { padding: 1.5rem; }
-    .header { padding: 1.5rem; }
-    .dim-tabs { padding: .8rem 1.5rem; overflow-x: auto; }
-    .stats-bar { padding: .8rem 1.5rem; }
-  }
+@media(max-width:900px){.grid{grid-template-columns:1fr;margin:0 .5rem}.steps{flex-wrap:wrap;gap:.3rem}.meta-bar{margin:0 .5rem}}
 </style>
 </head>
 <body>
 
-<div class="header">
-  <h1>Cookie Dimensions Explorer</h1>
-  <p>Deep-dive into every tracking cookie on any page - perception, structure, source, and time continuity</p>
+<div class="hdr">
+  <h1>Meta Tracking Deep Explorer</h1>
+  <p>Click through each step. All four layers update simultaneously.</p>
 </div>
 
-<div class="stats-bar" id="statsBar"></div>
-
-<div class="dim-tabs" id="dimTabs">
-  <button class="dim-tab active" data-dim="all">
-    <span class="tab-icon">*</span> All <span class="tab-count" id="count-all">0</span>
-  </button>
-  <button class="dim-tab" data-dim="perception">
-    <span class="tab-icon">&#x1f441;</span> Perception <span class="tab-count" id="count-perception">0</span>
-  </button>
-  <button class="dim-tab" data-dim="structure">
-    <span class="tab-icon">&#x1f9ec;</span> Structure <span class="tab-count" id="count-structure">0</span>
-  </button>
-  <button class="dim-tab" data-dim="source">
-    <span class="tab-icon">&#x1f4e1;</span> Source <span class="tab-count" id="count-source">0</span>
-  </button>
-  <button class="dim-tab" data-dim="time">
-    <span class="tab-icon">&#x23f3;</span> Time <span class="tab-count" id="count-time">0</span>
-  </button>
+<div class="scenarios">
+  <label>Scenario:</label>
+  <button class="scn-btn active" onclick="loadScenario('concert')">Concert Tickets</button>
+  <button class="scn-btn" onclick="loadScenario('shopping')">Online Shopping</button>
+  <button class="scn-btn" onclick="loadScenario('news')">News Article</button>
+  <button class="scn-btn" onclick="loadScenario('flights')">Flight Booking</button>
+  <button class="scn-btn" onclick="loadScenario('jobs')">Job Search</button>
+  <input class="scn-url" id="customUrl" placeholder="Or type any URL (e.g. zillow.com/homes/seattle)..." />
+  <button class="scn-go" onclick="loadCustom()">Go</button>
 </div>
 
-<div class="main">
-  <div class="sidebar">
-    <div class="cookie-list-header">
-      <h3>Cookies</h3>
-      <span id="totalCount" style="font-family:var(--font);font-size:.8rem;color:var(--accent)">0</span>
-    </div>
-    <input class="cookie-search" id="searchInput" placeholder="Filter cookies..." />
-    <div id="cookieList"></div>
-  </div>
-  <div class="content" id="detailContent">
-    <div class="detail-empty">
-      <div class="icon">&#x1f36a;</div>
-      <h3>Select a cookie to explore</h3>
-      <p style="margin-top:.5rem;color:var(--text-dim)">Or browse the dimension overviews above</p>
-    </div>
-  </div>
+<div class="steps" id="stepsBar"></div>
+<div class="grid" id="grid">
+  <div class="panel"><div class="panel-hdr"><span class="ph-left ph-perception"><span class="ph-icon">&#x1f441;</span> Perception</span><span class="ph-right">what you see</span></div><div class="panel-body" id="p-perception"></div></div>
+  <div class="panel"><div class="panel-hdr"><span class="ph-left ph-structure"><span class="ph-icon">&#x1f9ec;</span> Structure</span><span class="ph-right">cookies right now</span></div><div class="panel-body" id="p-structure"></div></div>
+  <div class="panel"><div class="panel-hdr"><span class="ph-left ph-source"><span class="ph-icon">&#x1f517;</span> Source</span><span class="ph-right">network requests this step</span></div><div class="panel-body" id="p-source"></div></div>
+  <div class="panel"><div class="panel-hdr"><span class="ph-left ph-time"><span class="ph-icon">&#x1f552;</span> Time</span><span class="ph-right">cumulative timeline</span></div><div class="panel-body" id="p-time"></div></div>
+</div>
+<div class="meta-bar" id="metaBar"></div>
+<div class="nav">
+  <button class="nav-btn nav-back" id="btnBack" onclick="prevStep()">&#x2190; Back</button>
+  <button class="nav-btn nav-next" id="btnNext" onclick="nextStep()">Next: Browse events &#x2192;</button>
 </div>
 
 <script>
-// ═══════════════════════════════════════════════════════════════════
-// COOKIE KNOWLEDGE BASE - fingerprint patterns for known trackers
-// ═══════════════════════════════════════════════════════════════════
-const KNOWN_COOKIES = {
-  // ── Meta / Facebook ──
-  '_fbp':       { source:'Meta', category:'advertising', purpose:'Facebook Pixel browser ID. Identifies browsers for ad targeting across the Meta Audience Network. Set by the Meta Pixel JS even on sites that never asked for it.', risk:9, party:'3rd', mechanism:'JS pixel drop', persistence:'90 days rolling', respawns: true },
-  '_fbc':       { source:'Meta', category:'advertising', purpose:'Facebook Click ID. Stores the fbclid URL parameter from Meta ad clicks. Links your visit back to the exact ad you clicked so Meta can attribute the conversion.', risk:9, party:'3rd', mechanism:'JS pixel on fbclid detection', persistence:'90 days rolling', respawns: true },
-  'fr':         { source:'Meta', category:'advertising', purpose:'Primary Meta ad-delivery and retargeting cookie. Contains an encrypted user fragment + timestamp. This is the main cookie Meta uses to show you "relevant" ads across the internet.', risk:10, party:'3rd', mechanism:'facebook.com iframe/pixel', persistence:'90 days', respawns: true },
-  'datr':       { source:'Meta', category:'functional', purpose:'Browser-level identifier set by facebook.com. Persists even when logged out. Meta claims it is for "security" but it uniquely fingerprints your browser across all sites with Facebook social plugins.', risk:8, party:'3rd', mechanism:'facebook.com domain', persistence:'2 years', respawns: true },
-  'sb':         { source:'Meta', category:'functional', purpose:'Facebook session bookkeeping. Stores browser-level identification to "secure" your account. In practice, another persistent fingerprint.', risk:6, party:'3rd', mechanism:'facebook.com domain', persistence:'2 years', respawns: false },
-  'wd':         { source:'Meta', category:'functional', purpose:'Stores your browser window dimensions. Ostensibly for layout, but window size is a known fingerprinting vector (screen resolution entropy).', risk:4, party:'1st', mechanism:'facebook.com JS', persistence:'7 days', respawns: false },
-  'c_user':     { source:'Meta', category:'authentication', purpose:'Your Facebook user ID in plain text. Present when logged in. Combined with xs cookie for session auth.', risk:5, party:'1st', mechanism:'facebook.com login', persistence:'session/1 year', respawns: false },
-  'xs':         { source:'Meta', category:'authentication', purpose:'Facebook session secret token. Paired with c_user for authentication. HttpOnly so JS cannot read it.', risk:3, party:'1st', mechanism:'facebook.com login', persistence:'1 year', respawns: false },
-  'presence':   { source:'Meta', category:'functional', purpose:'Facebook Messenger online presence indicator. Tracks when you were last active.', risk:5, party:'1st', mechanism:'facebook.com JS', persistence:'session', respawns: false },
+// ═══════════════════════════════════════════════════════════
+// SCENARIO DATA
+// ═══════════════════════════════════════════════════════════
+const SCENARIOS = {
 
-  // ── Google ──
-  '_ga':        { source:'Google', category:'analytics', purpose:'Google Analytics client ID. A randomly generated number + first-visit timestamp that uniquely identifies your browser. Sent with every pageview across any site running GA.', risk:7, party:'1st (set by GA JS)', mechanism:'analytics.js / gtag.js', persistence:'2 years', respawns: true },
-  '_ga_*':      { source:'Google', category:'analytics', purpose:'GA4 measurement ID scoped cookie. Same as _ga but namespaced per GA property. Enables cross-domain user identity stitching.', risk:7, party:'1st', mechanism:'gtag.js', persistence:'2 years', respawns: true },
-  '_gid':       { source:'Google', category:'analytics', purpose:'Google Analytics daily session ID. Distinguishes unique visitors within a 24-hour window. Refreshes daily but maps back to _ga.', risk:6, party:'1st', mechanism:'analytics.js', persistence:'24 hours', respawns: true },
-  '_gat':       { source:'Google', category:'analytics', purpose:'GA request throttle. Set to 1 for 1 minute to rate-limit beacon hits. Minimal privacy impact but reveals GA is active.', risk:2, party:'1st', mechanism:'analytics.js', persistence:'1 minute', respawns: false },
-  '_gcl_au':    { source:'Google', category:'advertising', purpose:'Google Ads conversion linker. Stores a click ID so Google can attribute your purchase back to an ad click across domains.', risk:8, party:'1st', mechanism:'conversion linker tag', persistence:'90 days', respawns: true },
-  'NID':        { source:'Google', category:'advertising', purpose:'Google preferences + ad cookie. Contains an encrypted record of your Google preferences and recent search history. Used for ad personalization.', risk:8, party:'3rd', mechanism:'google.com domain', persistence:'6 months', respawns: true },
-  'APISID':     { source:'Google', category:'authentication', purpose:'Google authentication cookie used by embedded YouTube players, Maps, and other Google widgets. Links your activity on third-party sites back to your Google account.', risk:7, party:'3rd', mechanism:'google.com domain', persistence:'2 years', respawns: false },
-  '1P_JAR':     { source:'Google', category:'advertising', purpose:'Google advertising cookie that collects site statistics and tracks conversion rates for Google ads.', risk:7, party:'3rd', mechanism:'google.com domain', persistence:'1 month', respawns: true },
-  'IDE':        { source:'Google', category:'advertising', purpose:'DoubleClick/Google Ad Manager cookie. Used for ad serving, retargeting, and cross-site conversion tracking. One of the most pervasive ad-tech cookies.', risk:9, party:'3rd', mechanism:'doubleclick.net', persistence:'1 year (13 months in EU)', respawns: true },
+concert: {
+  name: 'Concert Tickets',
+  steps: [
+    { label:'Page loads', next:'Browse events',
+      perception: { url:'eventbrite.com/o/ca--san-francisco/salsa-dancing/', title:'Salsa Dancing Events in San Francisco', subtitle:'Discover the best salsa events near you', items:[
+        {title:'SalsaCrazy Mondays, Neck of the Woods',sub:'Today 6:30 PM - $15'},{title:'Dance Fridays, Space 550',sub:'Friday 7:45 PM - $20'},{title:'Bachata in North Beach',sub:'Sunday 6:00 PM - $18'}], footnote:'A normal event listing. Nothing visible to the user.' },
+      structure: [
+        {name:'_fbp',value:'fb.1.1712847293000.1029384756',status:'created',desc:'Meta Pixel just generated your unique browser fingerprint. First-party cookie under .eventbrite.com, so it bypasses Safari ITP, Firefox ETP, and Chrome third-party blocking. This ID follows you across every site running Meta\'s pixel for 90 days.'},
+        {name:'_ga',value:'GA1.2.184293847.1712847293',status:'created',desc:'Google Analytics also dropped a tracking cookie. Different company, same surveillance technique.'},
+        {name:'csrftoken',value:'89f2bc84376611f1...',status:'created',desc:'This one is legitimate. Protects against cross-site request forgery. Not a tracker.'}],
+      source: [
+        {type:'Browser',badge:'get',url:'GET connect.facebook.net/en_US/fbevents.js',params:[{t:'Size: 62.4 KB',c:'b'},{t:'Type: Full behavioral surveillance SDK disguised as "analytics"',c:'r'}]},
+        {type:'Browser',badge:'send',url:'POST facebook.com/tr/?id=12345678901234&ev=PageView',params:[{t:'_fbp: fb.1.1712847293000.1029384756',c:'r'},{t:'dl: eventbrite.com/salsa-dancing',c:'g'},{t:'rl: google.com (your referrer)',c:'y'}]},
+        {type:'Browser',badge:'send',url:'IMG facebook.com/tr/noscript=1 [1x1 invisible pixel]',params:[],note:'Fallback: Hidden image fires even if JavaScript is blocked'}],
+      time: [
+        {ts:'0:00.000',title:'You visit Eventbrite',desc:'Searched Google for "salsa dancing SF." Clicked first result.',tags:['eventbrite.com'],dot:'active'},
+        {ts:'0:00.340',title:'_fbp cookie planted',desc:'Meta SDK wrote your permanent browser ID under Eventbrite\'s domain. Your browser thinks Eventbrite set it.',tags:['eventbrite.com'],dot:'meta'},
+        {ts:'0:00.510',title:'PageView beacon sent to Meta',desc:'Facebook now knows you visited this exact page, from Google, on this browser, at this time.',tags:['eventbrite.com','facebook.com'],dot:'meta'}],
+      metaKnows: ['Browser fingerprint','IP address','Referrer: Google search','Page: salsa dancing SF','Screen: 1440x900','Timezone: UTC-7 (Pacific)','Language: en-US','Device: Mac'] },
 
-  // ── Amazon ──
-  'ad-id':      { source:'Amazon', category:'advertising', purpose:'Amazon Advertising identifier. Tracks your browsing across sites in the Amazon ad network for retargeting.', risk:8, party:'3rd', mechanism:'amazon-adsystem.com', persistence:'varies', respawns: true },
-  'session-id': { source:'Amazon', category:'functional', purpose:'Amazon session identifier. Persists your shopping session and cart. Surprisingly long-lived for a "session" cookie.', risk:4, party:'1st', mechanism:'amazon.com', persistence:'2 years (!)', respawns: false },
+    { label:'Browse events', next:'Click event',
+      perception: { url:'eventbrite.com/o/ca--san-francisco/salsa-dancing/', title:'Salsa Dancing Events in San Francisco', subtitle:'Discover the best salsa events near you', items:[
+        {title:'SalsaCrazy Mondays, Neck of the Woods',sub:'Today 6:30 PM - $15',highlight:true,warn:'Sales ending soon'},{title:'Dance Fridays, Space 550',sub:'Friday 7:45 PM - $20'},{title:'Bachata in North Beach',sub:'Sunday 6:00 PM - $18'}], footnote:'You scroll, hover over events, read descriptions. Feels totally normal.' },
+      structure: [
+        {name:'_fbp',value:'fb.1.1712847293000.1029384756',status:'read',desc:'Pixel reads your _fbp on every interaction. Meta\'s SDK checks your fingerprint before each event it fires. Silent, continuous.'}],
+      source: [
+        {type:'Browser',badge:'send',url:'POST facebook.com/tr/?ev=MicroData',params:[{t:'Auto-scraped: og:title, og:type, pricing ($15-20), venue names',c:'r'}],note:'Note: SDK reads page metadata automatically. Eventbrite didn\'t explicitly send this.'},
+        {type:'Browser',badge:'send',url:'POST facebook.com/tr/?ev=scroll_depth',params:[{t:'ScrolledAt: 65%',c:'y'},{t:'Time on page: 12.4s',c:'y'},{t:'Hover: SalsaCrazy card, 3.2 seconds',c:'r'}]}],
+      time: [
+        {ts:'0:08.100',title:'Scroll + hover behavior tracked',desc:'Meta SDK monitors scroll depth, mouse position, hover duration. You hovered on SalsaCrazy for 3.2s. That\'s enough.',tags:['eventbrite.com','facebook.com'],dot:'meta'},
+        {ts:'0:12.800',title:'Page metadata auto-scraped',desc:'SDK reads OpenGraph tags, pricing, dates, structured data from the page. It takes what it wants without asking.',tags:['eventbrite.com','facebook.com'],dot:'meta'}],
+      metaKnows: ['Scroll depth: 65%','Hover: SalsaCrazy 3.2s','Time on page: 12s','Event prices visible: $15-20'] },
 
-  // ── TikTok ──
-  '_ttp':       { source:'TikTok', category:'advertising', purpose:'TikTok Pixel tracking. Similar to Meta _fbp - identifies browsers for ad attribution across the TikTok Ads network.', risk:9, party:'3rd', mechanism:'TikTok Pixel JS', persistence:'13 months', respawns: true },
-  'tt_webid':   { source:'TikTok', category:'analytics', purpose:'TikTok web visitor identifier. Assigned to every visitor on sites with TikTok tracking.', risk:8, party:'3rd', mechanism:'TikTok SDK', persistence:'13 months', respawns: true },
+    { label:'Click event', next:'Get tickets',
+      perception: { url:'eventbrite.com/e/salsacrazy-mondays-tickets-19810143', title:'SalsaCrazy Mondays', subtitle:'Neck of the Woods - 406 Clement St, San Francisco', body:'Today at 6:30 PM - Salsa & Bachata Dancing\nJoin SF\'s #1 Monday salsa night! Live DJ, beginner lesson at 6:30, open dancing until 11. All levels welcome.', hasTicket:true, ticketLabel:'General Admission', ticketPrice:'$15.00 + $3.79 fee', footnote:'Event detail page. Reading about the class. Nothing suspicious.' },
+      structure: [
+        {name:'_fbp',value:'fb.1.1712847293000.1029384756',status:'read',desc:'Same fingerprint sent with ViewContent event. Meta correlates this page view with your earlier browse. They know you drilled into this specific event.'}],
+      source: [
+        {type:'Browser',badge:'send',url:'POST facebook.com/tr/?ev=ViewContent',params:[{t:'content_name: "SalsaCrazy Mondays"',c:'r'},{t:'content_type: "event"',c:'b'},{t:'value: 15.00',c:'r'},{t:'currency: USD',c:'b'}]},
+        {type:'Browser',badge:'send',url:'POST facebook.com/tr/?ev=PageView (second page)',params:[{t:'dl: /e/salsacrazy-mondays-tickets-19810143',c:'g'},{t:'_fbp: fb.1.1712847293000.1029384756',c:'r'}]}],
+      time: [
+        {ts:'0:24.100',title:'ViewContent: "SalsaCrazy Mondays, $15"',desc:'Eventbrite fires fbq("track","ViewContent"). Meta now knows exactly which event interests you and its price.',tags:['eventbrite.com','facebook.com'],dot:'meta'},
+        {ts:'0:24.300',title:'Interest graph updated in real time',desc:'Meta tags your profile: "Salsa dancing", "Latin dance classes", "SF nightlife", "Dance events $10-25". These become targetable ad audiences within minutes.',tags:['eventbrite.com','facebook.com','instagram.com'],dot:'danger'}],
+      metaKnows: ['Interest: Salsa dancing','Interest: Latin dance SF','Interest: Nightlife $15-20','Specific event: SalsaCrazy Mondays','Event price: $15','Venue: Neck of the Woods, 406 Clement St','Location: Inner Richmond, SF'] },
 
-  // ── Microsoft / LinkedIn ──
-  '_uetsid':    { source:'Microsoft', category:'advertising', purpose:'Bing UET (Universal Event Tracking) session ID. Tracks your activity for Microsoft Advertising conversion attribution.', risk:7, party:'1st', mechanism:'UET tag JS', persistence:'session', respawns: false },
-  'li_sugr':    { source:'LinkedIn', category:'advertising', purpose:'LinkedIn Insight Tag browser match cookie. Maps browser to LinkedIn profile for ad targeting, even if you are not logged in to LinkedIn.', risk:8, party:'3rd', mechanism:'LinkedIn Insight Tag', persistence:'90 days', respawns: true },
-  'bcookie':    { source:'LinkedIn', category:'functional', purpose:'LinkedIn browser identifier. Set on first visit to any page with LinkedIn plugins.', risk:6, party:'3rd', mechanism:'linkedin.com', persistence:'1 year', respawns: false },
-  'UserMatchHistory': { source:'LinkedIn', category:'advertising', purpose:'LinkedIn ad syncing and retargeting. Enables cross-site audience matching.', risk:8, party:'3rd', mechanism:'linkedin.com', persistence:'30 days', respawns: true },
+    { label:'Get tickets', next:'Enter email',
+      perception: { url:'eventbrite.com/checkout-external?eid=19810143', isCheckout:true, checkoutItems:[{item:'1x General Admission',price:'$15.00',fee:'Service fee'},{item:'',price:'$3.79',fee:''}], total:'$18.79', footnote:'Standard checkout form. Nothing unusual visible. But the pixel just fired InitiateCheckout.' },
+      structure: [
+        {name:'_fbp',value:'fb.1.1712847293000.1029384756',status:'read',desc:'Your fingerprint accompanies the InitiateCheckout event. Meta now knows you have purchase intent for this exact item at this exact price.'}],
+      source: [
+        {type:'Browser',badge:'send',url:'POST facebook.com/tr/?ev=InitiateCheckout',params:[{t:'value: 18.79',c:'r'},{t:'currency: USD',c:'b'},{t:'num_items: 1',c:'b'},{t:'content_name: "SalsaCrazy Mondays"',c:'r'}]}],
+      time: [
+        {ts:'0:31.200',title:'InitiateCheckout: $18.79',desc:'You clicked "Get Tickets." Meta records purchase intent with exact cart value. Even if you abandon now, they\'ll retarget you with ads for this event on Instagram within hours.',tags:['eventbrite.com','facebook.com'],dot:'danger'},
+        {ts:'0:31.800',title:'Retargeting audience built',desc:'You\'re now in Eventbrite\'s "cart abandoner" custom audience on Meta. If you leave without buying, you\'ll see this exact event in your Instagram feed tomorrow.',tags:['eventbrite.com','facebook.com','instagram.com'],dot:'danger'}],
+      metaKnows: ['PURCHASE INTENT: $18.79','Cart: 1x General Admission','Retarget audience: cart abandoner'] },
 
-  // ── Pinterest ──
-  '_pinterest_ct_ua': { source:'Pinterest', category:'advertising', purpose:'Pinterest conversion tracking. Monitors actions after viewing or clicking Pinterest ads.', risk:7, party:'3rd', mechanism:'Pinterest Tag JS', persistence:'1 year', respawns: true },
-  '_pin_unauth':      { source:'Pinterest', category:'analytics', purpose:'Pinterest analytics for non-authenticated users. Tracks browsing behavior.', risk:6, party:'3rd', mechanism:'Pinterest Tag JS', persistence:'1 year', respawns: false },
+    { label:'Enter email', next:'Purchase',
+      perception: { url:'eventbrite.com/checkout-external?eid=19810143', isForm:true, footnote:'You\'re typing your email to get the tickets. The form looks normal. But Meta\'s Advanced Matching is watching.' },
+      structure: [
+        {name:'_fbp',value:'fb.1.1712847293000.1029384756',status:'read',desc:'Still reading. Every keystroke event on the page can trigger the SDK to check for form data.'},
+        {name:'_fbp_em',value:'[SHA256 hash of your email]',status:'created',desc:'Meta\'s Advanced Matching hashed your email BEFORE you hit submit. The SHA256 hash is sent to Meta, who matches it against their database of 3 billion accounts.'}],
+      source: [
+        {type:'Browser',badge:'send',url:'POST facebook.com/tr/?ev=Contact',params:[{t:'em: [SHA256 of email]',c:'r'},{t:'fn: [SHA256 of first name]',c:'r'},{t:'ln: [SHA256 of last name]',c:'r'}],note:'Advanced Matching: Meta hashes your PII client-side and sends it. They match the hash against their user database.'}],
+      time: [
+        {ts:'0:52.400',title:'Email captured via Advanced Matching',desc:'You typed your email into the checkout form. Meta\'s SDK detected the email field, hashed it with SHA256, and sent the hash to Facebook. If you have a Facebook account with that email, your anonymous _fbp is now linked to your real identity.',tags:['eventbrite.com','facebook.com'],dot:'danger'},
+        {ts:'0:52.900',title:'Cross-device identity merge',desc:'Meta matched your email hash to your Facebook account. Your phone, laptop, and tablet browsing are now unified into one profile. Every site you visited with a Meta pixel, on any device, is now connected.',tags:['facebook.com','instagram.com'],dot:'danger'}],
+      metaKnows: ['Email: [SHA256 matched]','Real identity: linked to FB account','Cross-device: phone + laptop merged','Full browsing history: unified'] },
 
-  // ── Snap ──
-  '_scid':      { source:'Snapchat', category:'advertising', purpose:'Snap Pixel client ID. Tracks conversions from Snapchat ads.', risk:8, party:'3rd', mechanism:'Snap Pixel JS', persistence:'13 months', respawns: true },
+    { label:'Purchase', next:null,
+      perception: { url:'eventbrite.com/checkout/confirmation?order=48291037', isConfirm:true, footnote:'Order confirmed! You got your tickets. Behind the scenes, five ad networks just received your purchase data.' },
+      structure: [
+        {name:'_fbp',value:'fb.1.1712847293000.1029384756',status:'read',desc:'Final read. Your fingerprint is sent with the Purchase event. Meta\'s attribution model now has the complete chain: search -> browse -> click -> checkout -> buy.'},
+        {name:'_ga',value:'GA1.2.184293847.1712847293',status:'read',desc:'Google Analytics also fires a purchase event. Two surveillance networks confirming the same transaction.'}],
+      source: [
+        {type:'Browser',badge:'send',url:'POST facebook.com/tr/?ev=Purchase',params:[{t:'value: 18.79',c:'r'},{t:'currency: USD',c:'r'},{t:'content_name: "SalsaCrazy Mondays"',c:'r'},{t:'content_type: "event"',c:'b'},{t:'order_id: 48291037',c:'r'}]},
+        {type:'Browser',badge:'send',url:'POST facebook.com/tr/ (server-side Conversions API)',params:[{t:'Duplicate of above, sent server-to-server',c:'r'}],note:'Even if you block cookies, this server-side event still fires. There is no browser-side defense.'}],
+      time: [
+        {ts:'1:14.200',title:'Purchase: $18.79 confirmed',desc:'Meta receives the Purchase event with full order details. Your conversion is attributed to the original Google search. Eventbrite will be charged for this ad conversion.',tags:['eventbrite.com','facebook.com'],dot:'danger'},
+        {ts:'1:14.600',title:'Lookalike audience seed',desc:'You\'re now a "salsa event purchaser in SF." Meta will find other users who behave like you and show them SalsaCrazy ads. Your purchase trains the algorithm to target others.',tags:['facebook.com','instagram.com'],dot:'danger'},
+        {ts:'1:15.000',title:'Permanent profile update',desc:'Your Meta ad profile now includes: dance enthusiast, nightlife spender $15-20 range, SF Bay Area, converts from Google search. This never expires. It will influence every ad you see from now on.',tags:['facebook.com','instagram.com'],dot:'danger'}],
+      metaKnows: ['PURCHASED: $18.79','Order ID: 48291037','Conversion source: Google search','Lookalike seed: salsa buyers SF','Lifetime value: $18.79+','Profile: dance/nightlife/SF/$15-20'] }
+  ]
+},
 
-  // ── Generic patterns ──
-  '__cf_bm':    { source:'Cloudflare', category:'necessary', purpose:'Cloudflare Bot Management. Distinguishes human visitors from bots. A rare example of a truly necessary third-party cookie.', risk:1, party:'3rd', mechanism:'Cloudflare edge', persistence:'30 minutes', respawns: false },
-  '__cfruid':   { source:'Cloudflare', category:'necessary', purpose:'Cloudflare rate limiting cookie. Identifies clients for abuse prevention.', risk:1, party:'3rd', mechanism:'Cloudflare edge', persistence:'session', respawns: false },
-  'JSESSIONID': { source:'Server', category:'necessary', purpose:'Java servlet session ID. Standard server-side session cookie with no tracking intent.', risk:1, party:'1st', mechanism:'server Set-Cookie', persistence:'session', respawns: false },
-  'PHPSESSID':  { source:'Server', category:'necessary', purpose:'PHP session ID. Standard server-side session cookie.', risk:1, party:'1st', mechanism:'server Set-Cookie', persistence:'session', respawns: false },
-  'csrftoken':  { source:'Server', category:'necessary', purpose:'Cross-Site Request Forgery protection token. A security cookie, not a tracking cookie.', risk:0, party:'1st', mechanism:'server Set-Cookie', persistence:'session/1 year', respawns: false },
+shopping: {
+  name: 'Online Shopping',
+  steps: [
+    { label:'Search product', next:'Browse items',
+      perception: { url:'nordstrom.com/sr?keyword=running+shoes', title:'Running Shoes', subtitle:'1,247 results for "running shoes"', items:[
+        {title:'Nike Air Zoom Pegasus 41',sub:'$129.99 - Free shipping'},{title:'Adidas Ultraboost Light',sub:'$189.99 - 20% off'},{title:'New Balance Fresh Foam X',sub:'$109.99 - Best seller'}], footnote:'Product search results. Looks like any shopping site.' },
+      structure: [
+        {name:'_fbp',value:'fb.1.1712900100.8827364510',status:'created',desc:'Meta Pixel tagged your browser the instant the page loaded. Nordstrom runs Meta ads, so the pixel is on every page.'},
+        {name:'_ga',value:'GA1.2.5544332211.1712900100',status:'created',desc:'Google Analytics tracking. Nordstrom uses GA4 to measure traffic sources.'},
+        {name:'_pin_unauth',value:'dWlkPTEyMzQ1Njc4OTA=',status:'created',desc:'Pinterest tracking pixel. Nordstrom runs Pinterest shopping ads too. Three trackers from one page load.'}],
+      source: [
+        {type:'Browser',badge:'send',url:'POST facebook.com/tr/?ev=Search',params:[{t:'search_string: "running shoes"',c:'r'},{t:'content_category: "shoes"',c:'b'}]},
+        {type:'Browser',badge:'get',url:'GET connect.facebook.net/en_US/fbevents.js',params:[{t:'Size: 62.4 KB',c:'b'}]}],
+      time: [
+        {ts:'0:00.000',title:'You search Nordstrom',desc:'Typed "running shoes" into the search bar. Results loaded.',tags:['nordstrom.com'],dot:'active'},
+        {ts:'0:00.400',title:'Search query sent to Meta',desc:'Meta now knows you\'re shopping for running shoes. Before you\'ve clicked a single product.',tags:['nordstrom.com','facebook.com'],dot:'meta'}],
+      metaKnows: ['Browser fingerprint','IP address','Search: "running shoes"','Category: shoes','Store: Nordstrom','Screen: 1440x900','Device: Mac'] },
+
+    { label:'Browse items', next:'View product',
+      perception: { url:'nordstrom.com/sr?keyword=running+shoes', title:'Running Shoes', subtitle:'1,247 results', items:[
+        {title:'Nike Air Zoom Pegasus 41',sub:'$129.99',highlight:true},{title:'Adidas Ultraboost Light',sub:'$189.99 - 20% off'},{title:'New Balance Fresh Foam X',sub:'$109.99'}], footnote:'You scroll through products, comparing prices. The pixel tracks every hover and scroll.' },
+      structure: [{name:'_fbp',value:'fb.1.1712900100.8827364510',status:'read',desc:'Pixel reads _fbp to correlate your scrolling behavior with your browser ID. Hover time on each product is logged.'}],
+      source: [
+        {type:'Browser',badge:'send',url:'POST facebook.com/tr/?ev=scroll_depth',params:[{t:'Products viewed: 12',c:'y'},{t:'Price range seen: $109-189',c:'r'},{t:'Hover: Nike Pegasus 4.1s',c:'r'}]}],
+      time: [
+        {ts:'0:15.300',title:'Browse behavior tracked',desc:'Meta knows which products caught your eye and for how long. Price sensitivity is being calculated.',tags:['nordstrom.com','facebook.com'],dot:'meta'}],
+      metaKnows: ['Price range interest: $109-189','Brand interest: Nike (longest hover)','Products viewed: 12','Scroll depth: 80%'] },
+
+    { label:'View product', next:'Add to cart',
+      perception: { url:'nordstrom.com/s/nike-air-zoom-pegasus-41/7123456', title:'Nike Air Zoom Pegasus 41', subtitle:'Men\'s Running Shoe - $129.99', body:'Responsive ZoomX foam. Breathable mesh upper. 10mm offset.\n\nColor: Black/White\nSize: Select size', hasTicket:false, footnote:'Product detail page. You\'re reading reviews and checking sizes.' },
+      structure: [{name:'_fbp',value:'fb.1.1712900100.8827364510',status:'read',desc:'ViewContent event fired with exact product ID and price. Meta\'s product catalog matches this to their ad inventory.'}],
+      source: [
+        {type:'Browser',badge:'send',url:'POST facebook.com/tr/?ev=ViewContent',params:[{t:'content_name: "Nike Air Zoom Pegasus 41"',c:'r'},{t:'content_ids: ["7123456"]',c:'r'},{t:'value: 129.99',c:'r'},{t:'currency: USD',c:'b'}]}],
+      time: [
+        {ts:'0:32.600',title:'ViewContent: Nike Pegasus, $129.99',desc:'Meta now knows the exact product you\'re considering. Dynamic product ads can now retarget you with this specific shoe.',tags:['nordstrom.com','facebook.com'],dot:'meta'},
+        {ts:'0:33.000',title:'Dynamic retargeting activated',desc:'If you leave now, you\'ll see this exact shoe in your Instagram feed within 2 hours. The ad will show your size and the exact price.',tags:['facebook.com','instagram.com'],dot:'danger'}],
+      metaKnows: ['Specific product: Nike Pegasus 41','Product ID: 7123456','Price point: $129.99','Category: men\'s running'] },
+
+    { label:'Add to cart', next:'Checkout',
+      perception: { url:'nordstrom.com/s/nike-air-zoom-pegasus-41/7123456', title:'Nike Air Zoom Pegasus 41', subtitle:'Added to bag!', body:'Size: 10 - Black/White\n$129.99', hasTicket:false, isCart:true, footnote:'You added the shoe to your cart. The AddToCart event just fired to Meta, Google, and Pinterest.' },
+      structure: [{name:'_fbp',value:'fb.1.1712900100.8827364510',status:'read',desc:'AddToCart is a high-intent signal. Meta\'s bidding algorithm now values your profile higher in ad auctions — you\'re a "likely purchaser."'}],
+      source: [
+        {type:'Browser',badge:'send',url:'POST facebook.com/tr/?ev=AddToCart',params:[{t:'content_ids: ["7123456"]',c:'r'},{t:'value: 129.99',c:'r'},{t:'content_type: "product"',c:'b'}]}],
+      time: [
+        {ts:'0:58.100',title:'AddToCart: Nike Pegasus, $129.99',desc:'High-intent signal. You\'re now in the "shopping cart" audience segment. Ad bids for you just went up across Meta\'s auction.',tags:['nordstrom.com','facebook.com'],dot:'danger'},
+        {ts:'0:58.500',title:'Cart abandonment timer started',desc:'If you don\'t purchase within 1 hour, you\'ll receive retargeting ads. Within 24 hours, Nordstrom may email you "Forgot something?" if they have your email from a previous purchase.',tags:['facebook.com','instagram.com'],dot:'danger'}],
+      metaKnows: ['Cart: Nike Pegasus $129.99','Size: 10','Intent level: HIGH (add to cart)','Retarget timer: active'] },
+
+    { label:'Checkout', next:'Purchase',
+      perception: { url:'nordstrom.com/checkout', isCheckout:true, checkoutItems:[{item:'Nike Air Zoom Pegasus 41 (Size 10)',price:'$129.99',fee:'Shipping'},{item:'',price:'FREE',fee:''}], total:'$129.99', footnote:'Entering payment details. InitiateCheckout event fires. If you abandon here, retargeting intensifies.' },
+      structure: [
+        {name:'_fbp',value:'fb.1.1712900100.8827364510',status:'read',desc:'InitiateCheckout event. Meta now knows you\'re one step from purchasing. Your ad profile value increases again.'},
+        {name:'_fbp_em',value:'[SHA256 of email]',status:'created',desc:'Advanced Matching detected your email in the checkout form. Meta matched you to your Facebook account.'}],
+      source: [
+        {type:'Browser',badge:'send',url:'POST facebook.com/tr/?ev=InitiateCheckout',params:[{t:'value: 129.99',c:'r'},{t:'num_items: 1',c:'b'},{t:'em: [SHA256 hash]',c:'r'}]}],
+      time: [
+        {ts:'1:22.400',title:'InitiateCheckout + identity match',desc:'Email entered. Meta matched the SHA256 hash to your Facebook account. All your anonymous browsing is now linked to your real name.',tags:['nordstrom.com','facebook.com'],dot:'danger'}],
+      metaKnows: ['Email: [matched to FB account]','Real identity: linked','Cross-device: unified'] },
+
+    { label:'Purchase', next:null,
+      perception: { url:'nordstrom.com/checkout/confirmation?order=NRD-88412', isConfirm:true, footnote:'Order placed! You\'ll get your shoes in 3-5 days. Meta gets your purchase data in 0.3 seconds.' },
+      structure: [
+        {name:'_fbp',value:'fb.1.1712900100.8827364510',status:'read',desc:'Purchase event fired. Full attribution chain complete: search -> browse -> view -> cart -> checkout -> buy. Meta takes credit for the conversion.'}],
+      source: [
+        {type:'Browser',badge:'send',url:'POST facebook.com/tr/?ev=Purchase',params:[{t:'value: 129.99',c:'r'},{t:'content_ids: ["7123456"]',c:'r'},{t:'order_id: NRD-88412',c:'r'}]}],
+      time: [
+        {ts:'1:48.200',title:'Purchase: $129.99',desc:'Meta records the sale. Nordstrom pays Meta for the attributed conversion. Your buyer profile is permanent.',tags:['nordstrom.com','facebook.com'],dot:'danger'},
+        {ts:'1:48.800',title:'Post-purchase profiling',desc:'Meta will now show you ads for running socks, insoles, athletic wear. Your "runner" interest profile is activated permanently.',tags:['facebook.com','instagram.com'],dot:'danger'}],
+      metaKnows: ['PURCHASED: $129.99','Product: Nike Pegasus 41','Profile: runner, $100-150 buyer','Lookalike seed: athletic shoppers'] }
+  ]
+},
+
+news: {
+  name: 'News Article',
+  steps: [
+    { label:'Open article', next:'Read & scroll',
+      perception: { url:'cnn.com/2026/04/13/tech/ai-regulation-europe/index.html', title:'Europe Passes Landmark AI Regulation Act', subtitle:'Updated 2:30 PM ET, April 13, 2026 - CNN', body:'The European Union voted Thursday to approve the most comprehensive AI regulation framework in the world, setting strict limits on facial recognition and automated decision-making...', footnote:'A news article. You\'re just reading the news.' },
+      structure: [
+        {name:'_fbp',value:'fb.1.1712920000.3344556677',status:'created',desc:'CNN runs Meta\'s pixel on every article page. Your interest in AI regulation is now in your ad profile.'},
+        {name:'_ga',value:'GA1.2.9988776655.1712920000',status:'created',desc:'Google Analytics. CNN uses this to sell ad inventory based on reader demographics.'},
+        {name:'IDE',value:'AHWqTUnPQRSTUVW...',status:'created',desc:'Google DoubleClick ad cookie. CNN\'s programmatic ads run through Google\'s ad exchange. This cookie tracks you across the entire Google ad network.'}],
+      source: [
+        {type:'Browser',badge:'send',url:'POST facebook.com/tr/?ev=PageView',params:[{t:'dl: cnn.com/tech/ai-regulation-europe',c:'g'},{t:'content_category: "technology"',c:'b'}]},
+        {type:'Browser',badge:'get',url:'GET securepubads.g.doubleclick.net/tag/js/gpt.js',params:[{t:'Google Publisher Tag: loads personalized ads',c:'r'}]}],
+      time: [
+        {ts:'0:00.000',title:'You open a CNN article',desc:'Clicked a link from your news feed about EU AI regulation.',tags:['cnn.com'],dot:'active'},
+        {ts:'0:00.380',title:'PageView sent to Meta + Google',desc:'Both networks know you\'re reading about AI regulation. This informs ad targeting immediately.',tags:['cnn.com','facebook.com'],dot:'meta'}],
+      metaKnows: ['Browser fingerprint','IP address','Reading: AI regulation','Category: technology/politics','Source: CNN','Device info'] },
+
+    { label:'Read & scroll', next:'Click related',
+      perception: { url:'cnn.com/2026/04/13/tech/ai-regulation-europe/index.html', title:'Europe Passes Landmark AI Regulation Act', subtitle:'CNN', body:'...The act requires all AI systems to disclose when content is generated by artificial intelligence. Companies face fines of up to 7% of global revenue for violations...', footnote:'You\'re deep in the article. Scroll depth and read time are being tracked.' },
+      structure: [{name:'_fbp',value:'fb.1.1712920000.3344556677',status:'read',desc:'Scroll events firing continuously. Meta builds a read-time heatmap of your engagement.'}],
+      source: [
+        {type:'Browser',badge:'send',url:'POST facebook.com/tr/?ev=scroll_depth',params:[{t:'ScrolledAt: 85%',c:'y'},{t:'Time on page: 45s',c:'y'},{t:'Read speed: ~250 WPM',c:'r'}]}],
+      time: [
+        {ts:'0:45.200',title:'Deep engagement detected',desc:'85% scroll + 45 seconds = high engagement. Meta classifies you as "interested in AI/tech policy." Ad targeting updated.',tags:['cnn.com','facebook.com'],dot:'meta'}],
+      metaKnows: ['Read time: 45s','Scroll: 85%','Interest: AI regulation','Interest: tech policy','Engagement: high'] },
+
+    { label:'Click related', next:'Watch video',
+      perception: { url:'cnn.com/2026/04/12/tech/openai-gpt5-release/index.html', title:'OpenAI Releases GPT-5: What You Need to Know', subtitle:'CNN Technology', body:'OpenAI unveiled GPT-5 Wednesday, calling it "a fundamental leap" in artificial intelligence capability. The model demonstrates...',footnote:'You clicked a related article. Meta now has two data points about your interests.' },
+      structure: [{name:'_fbp',value:'fb.1.1712920000.3344556677',status:'read',desc:'Second PageView + ViewContent. Meta is building a session graph of your reading pattern. Two AI articles = strong signal.'}],
+      source: [
+        {type:'Browser',badge:'send',url:'POST facebook.com/tr/?ev=ViewContent',params:[{t:'content_name: "OpenAI GPT-5 Release"',c:'r'},{t:'content_category: "technology"',c:'b'}]}],
+      time: [
+        {ts:'1:32.100',title:'Second article: GPT-5 coverage',desc:'Two AI articles in one session. Meta\'s interest classifier now has high confidence: tech enthusiast, AI follower, early adopter.',tags:['cnn.com','facebook.com'],dot:'meta'},
+        {ts:'1:32.500',title:'Interest graph strengthened',desc:'Your ad profile now includes: "AI/ML technology", "early adopter", "tech policy aware." SaaS companies and tech brands will bid higher to reach you.',tags:['facebook.com','instagram.com'],dot:'danger'}],
+      metaKnows: ['Interest: OpenAI/GPT-5','Interest: AI/ML (confirmed)','Reader type: early adopter','Article count: 2 in session'] },
+
+    { label:'Watch video', next:'Share article',
+      perception: { url:'cnn.com/videos/tech/2026/04/13/ai-regulation-explainer.cnn', title:'[VIDEO] AI Regulation Explained in 3 Minutes', subtitle:'CNN - 2:47', body:'[Video player showing EU parliament footage with play button]', footnote:'You clicked play on an embedded video. The video player fires its own tracking events.' },
+      structure: [
+        {name:'_fbp',value:'fb.1.1712920000.3344556677',status:'read',desc:'Video view events: start, 25%, 50%, 75%, 100%. Each milestone fires a separate beacon to Meta.'},
+        {name:'YSC',value:'dQw4w9WgXcQ',status:'created',desc:'YouTube session cookie. If CNN embeds YouTube, Google gets a second tracking vector through their video player.'}],
+      source: [
+        {type:'Browser',badge:'send',url:'POST facebook.com/tr/?ev=ViewContent&content_type=video',params:[{t:'video_title: "AI Regulation Explainer"',c:'r'},{t:'video_length: 167s',c:'b'},{t:'video_watched: 100%',c:'r'}]}],
+      time: [
+        {ts:'2:15.000',title:'Video: watched 100%',desc:'You watched the entire video. Full video completion is a premium engagement signal. Your attention is worth more now.',tags:['cnn.com','facebook.com'],dot:'meta'}],
+      metaKnows: ['Video: AI regulation (100% watched)','Engagement: premium (full video)','Content format: video consumer'] },
+
+    { label:'Share article', next:null,
+      perception: { url:'cnn.com/2026/04/13/tech/ai-regulation-europe/index.html', title:'Europe Passes Landmark AI Regulation Act', subtitle:'Shared!', body:'You clicked the Facebook share button. A preview card appeared, you added a comment, and shared to your timeline.', footnote:'You shared the article on Facebook. Meta now has explicit, consented proof of your interest.' },
+      structure: [
+        {name:'_fbp',value:'fb.1.1712920000.3344556677',status:'read',desc:'The share action is the highest-intent signal of all. You publicly declared interest in AI regulation. This is gold for ad targeting.'}],
+      source: [
+        {type:'Browser',badge:'send',url:'POST facebook.com/sharer/sharer.php',params:[{t:'u: cnn.com/tech/ai-regulation-europe',c:'g'},{t:'quote: "Huge implications for AI companies"',c:'r'}]},
+        {type:'Browser',badge:'send',url:'POST graph.facebook.com/me/feed',params:[{t:'link: [article URL]',c:'g'},{t:'message: [your comment]',c:'r'}]}],
+      time: [
+        {ts:'3:45.000',title:'Shared to Facebook',desc:'You publicly shared the article. Meta now has: your reading pattern, video engagement, AND an explicit public endorsement of AI content. Your friends who engage with the share also feed the algorithm.',tags:['cnn.com','facebook.com'],dot:'danger'},
+        {ts:'3:45.500',title:'Social graph amplification',desc:'Friends who click your share get their own _fbp planted. The tracking cascade expands through your social network.',tags:['facebook.com'],dot:'danger'}],
+      metaKnows: ['SHARED publicly on Facebook','Social proof: AI regulation interest','Friends exposed to tracking cascade','Profile: tech-policy-influencer'] }
+  ]
+},
+
+flights: {
+  name: 'Flight Booking',
+  steps: [
+    { label:'Search flights', next:'Compare options',
+      perception: { url:'kayak.com/flights/SFO-NYC/2026-05-15/2026-05-20', title:'Flights: San Francisco to New York', subtitle:'May 15-20, 2026 - 1 passenger', items:[
+        {title:'United Airlines - Nonstop',sub:'$347 - 5h 15m - Departs 8:00 AM'},{title:'JetBlue Airways - Nonstop',sub:'$312 - 5h 30m - Departs 10:45 AM'},{title:'Delta Air Lines - 1 stop',sub:'$289 - 8h 10m - Departs 6:30 AM'}], footnote:'Flight search results. You\'re comparing prices for a trip to NYC.' },
+      structure: [
+        {name:'_fbp',value:'fb.1.1712950000.6655443322',status:'created',desc:'Kayak runs Meta\'s pixel. Your flight search details — dates, destination, price range — are sent to Meta immediately.'},
+        {name:'_ga',value:'GA1.2.1122334455.1712950000',status:'created',desc:'Google Analytics tracking your search.'},
+        {name:'IDE',value:'AHWqTU_flight_search...',status:'created',desc:'DoubleClick cookie. Google\'s ad network now knows you\'re shopping for flights.'}],
+      source: [
+        {type:'Browser',badge:'send',url:'POST facebook.com/tr/?ev=Search',params:[{t:'search_string: "SFO to NYC"',c:'r'},{t:'destination: "New York"',c:'r'},{t:'travel_start: "2026-05-15"',c:'r'},{t:'travel_end: "2026-05-20"',c:'r'},{t:'num_adults: 1',c:'b'}]}],
+      time: [
+        {ts:'0:00.000',title:'Flight search initiated',desc:'You searched SFO to NYC, May 15-20.',tags:['kayak.com'],dot:'active'},
+        {ts:'0:00.450',title:'Travel intent sent to Meta',desc:'Meta now knows: you\'re traveling to NYC, specific dates, solo traveler, price-comparing. Hotel and activity ads incoming.',tags:['kayak.com','facebook.com'],dot:'meta'}],
+      metaKnows: ['Browser fingerprint','IP address','Travel: SFO to NYC','Dates: May 15-20','Travelers: 1 (solo)','Budget: comparing $289-347'] },
+
+    { label:'Compare options', next:'Select flight',
+      perception: { url:'kayak.com/flights/SFO-NYC/2026-05-15/2026-05-20', title:'Flights: SFO to NYC', subtitle:'Sorted by price', items:[
+        {title:'Delta - $289 (1 stop)',sub:'8h 10m via ATL'},{title:'JetBlue - $312 (nonstop)',sub:'5h 30m',highlight:true},{title:'United - $347 (nonstop)',sub:'5h 15m'}], footnote:'You\'re comparing prices and reading reviews. Every hover is tracked.' },
+      structure: [{name:'_fbp',value:'fb.1.1712950000.6655443322',status:'read',desc:'Pixel tracking which flights you hover on, how long, and your price sensitivity pattern.'}],
+      source: [
+        {type:'Browser',badge:'send',url:'POST facebook.com/tr/?ev=scroll_depth',params:[{t:'Hover: JetBlue 4.2s, Delta 1.8s, United 0.9s',c:'r'},{t:'Sort action: by price',c:'y'}]}],
+      time: [
+        {ts:'0:25.100',title:'Price sensitivity calculated',desc:'You sorted by price and spent the most time on the mid-range option. Meta infers: budget-conscious but willing to pay for nonstop.',tags:['kayak.com','facebook.com'],dot:'meta'}],
+      metaKnows: ['Airline preference: JetBlue (longest hover)','Price sensitivity: mid-range ($312)','Preference: nonstop flights'] },
+
+    { label:'Select flight', next:'Enter details',
+      perception: { url:'kayak.com/book/JetBlue-SFO-NYC-20260515', title:'JetBlue Airways B6 415', subtitle:'SFO to JFK - May 15, Nonstop - $312', body:'Departure: 10:45 AM - Arrival: 7:15 PM ET\nEconomy - Standard fare\nIncludes: carry-on, personal item\nSeat selection: available at checkout', footnote:'Flight selected. You\'re reviewing the details before booking.' },
+      structure: [{name:'_fbp',value:'fb.1.1712950000.6655443322',status:'read',desc:'ViewContent with flight details. Meta knows your exact itinerary: airline, route, date, price.'}],
+      source: [
+        {type:'Browser',badge:'send',url:'POST facebook.com/tr/?ev=ViewContent',params:[{t:'content_name: "JetBlue B6 415 SFO-JFK"',c:'r'},{t:'value: 312.00',c:'r'},{t:'departure: "2026-05-15T10:45"',c:'r'}]}],
+      time: [
+        {ts:'0:48.300',title:'ViewContent: JetBlue $312',desc:'Meta now knows your exact flight. NYC hotel ads and "things to do in NYC" content will appear in your feed within hours.',tags:['kayak.com','facebook.com'],dot:'meta'},
+        {ts:'0:48.700',title:'Travel intent graph updated',desc:'Meta tags: "NYC traveler May 2026", "JetBlue customer", "economy class". Hotel brands, restaurant apps, and tourist attractions will bid on you.',tags:['facebook.com','instagram.com'],dot:'danger'}],
+      metaKnows: ['Flight: JetBlue B6 415','Route: SFO-JFK nonstop','Date: May 15, 10:45 AM','Price: $312','Class: Economy'] },
+
+    { label:'Enter details', next:'Payment',
+      perception: { url:'kayak.com/book/checkout?flight=B6415', isForm:true, footnote:'Entering passenger details. Name, email, phone. Advanced Matching captures everything.' },
+      structure: [
+        {name:'_fbp',value:'fb.1.1712950000.6655443322',status:'read',desc:'Identity fields detected. Advanced Matching hashes and sends PII.'},
+        {name:'_fbp_em',value:'[SHA256 hash]',status:'created',desc:'Your email, name, and phone number are hashed and sent to Meta. Cross-device identity merge initiated.'}],
+      source: [
+        {type:'Browser',badge:'send',url:'POST facebook.com/tr/?ev=Contact',params:[{t:'em: [SHA256]',c:'r'},{t:'fn: [SHA256]',c:'r'},{t:'ph: [SHA256]',c:'r'}],note:'Advanced Matching: all form fields hashed and sent before you even click "Book."'}],
+      time: [
+        {ts:'1:15.000',title:'Identity captured',desc:'Name, email, phone hashed and matched to your Facebook account. Your anonymous browsing is now linked to your real identity across all devices.',tags:['kayak.com','facebook.com'],dot:'danger'}],
+      metaKnows: ['Email: [matched]','Phone: [matched]','Real name: linked','Cross-device: unified'] },
+
+    { label:'Payment', next:'Confirmation',
+      perception: { url:'kayak.com/book/payment?flight=B6415', isCheckout:true, checkoutItems:[{item:'JetBlue B6 415 SFO-JFK May 15',price:'$312.00',fee:'Taxes & fees'},{item:'',price:'$47.80',fee:''}], total:'$359.80', footnote:'Payment page. You\'re entering your credit card. InitiateCheckout fires.' },
+      structure: [{name:'_fbp',value:'fb.1.1712950000.6655443322',status:'read',desc:'InitiateCheckout with full trip value. If you abandon, retargeting ads will show this exact flight for days.'}],
+      source: [
+        {type:'Browser',badge:'send',url:'POST facebook.com/tr/?ev=InitiateCheckout',params:[{t:'value: 359.80',c:'r'},{t:'currency: USD',c:'b'},{t:'content_name: "JetBlue B6 415"',c:'r'}]}],
+      time: [
+        {ts:'1:42.300',title:'InitiateCheckout: $359.80',desc:'You\'re one click from booking. If you close this tab, you\'ll see JetBlue SFO-JFK ads everywhere for the next 7 days.',tags:['kayak.com','facebook.com'],dot:'danger'}],
+      metaKnows: ['CHECKOUT: $359.80','Cart abandonment: armed'] },
+
+    { label:'Confirmation', next:null,
+      perception: { url:'kayak.com/book/confirmation?ref=KYK-29471', isConfirm:true, footnote:'Booked! Your NYC trip is confirmed. Meta, Google, and Kayak all recorded the $359.80 transaction.' },
+      structure: [{name:'_fbp',value:'fb.1.1712950000.6655443522',status:'read',desc:'Purchase event. Complete attribution chain. Meta now has your full travel profile.'}],
+      source: [
+        {type:'Browser',badge:'send',url:'POST facebook.com/tr/?ev=Purchase',params:[{t:'value: 359.80',c:'r'},{t:'content_name: "JetBlue SFO-JFK May 15"',c:'r'}]}],
+      time: [
+        {ts:'2:08.600',title:'Purchase: $359.80',desc:'Flight booked. Your profile is now: "traveling to NYC May 15-20, budget traveler, JetBlue customer." Hotel and restaurant ads begin immediately.',tags:['kayak.com','facebook.com'],dot:'danger'}],
+      metaKnows: ['PURCHASED: $359.80','Traveler: NYC May 15-20','Lifetime: JetBlue customer','Next ads: NYC hotels, restaurants, activities'] }
+  ]
+},
+
+jobs: {
+  name: 'Job Search',
+  steps: [
+    { label:'Search jobs', next:'Browse listings',
+      perception: { url:'indeed.com/jobs?q=senior+software+engineer&l=san+francisco', title:'Senior Software Engineer jobs in San Francisco', subtitle:'2,847 jobs found', items:[
+        {title:'Senior Software Engineer - Stripe',sub:'$180K-$250K - San Francisco, CA - Posted 2d ago'},{title:'Staff Engineer - Airbnb',sub:'$200K-$280K - San Francisco, CA - Remote eligible'},{title:'Senior Backend Engineer - Coinbase',sub:'$175K-$240K - Remote'}], footnote:'Job search results. You\'re looking for a new role. This is extremely sensitive personal data.' },
+      structure: [
+        {name:'_fbp',value:'fb.1.1712980000.7788990011',status:'created',desc:'Indeed runs Meta\'s pixel. Your job search — title, salary range, location — is now part of your Meta ad profile. Recruiters buy this data.'},
+        {name:'_ga',value:'GA1.2.6677889900.1712980000',status:'created',desc:'Google Analytics tracking your job search behavior.'},
+        {name:'li_sugr',value:'a1b2c3d4-5e6f-7a8b-9c0d',status:'created',desc:'LinkedIn\'s Insight Tag. LinkedIn now knows you\'re job searching — even on Indeed, their competitor.'}],
+      source: [
+        {type:'Browser',badge:'send',url:'POST facebook.com/tr/?ev=Search',params:[{t:'search_string: "senior software engineer"',c:'r'},{t:'location: "San Francisco"',c:'r'},{t:'content_category: "jobs"',c:'b'}]},
+        {type:'Browser',badge:'send',url:'POST px.ads.linkedin.com/collect',params:[{t:'page: indeed.com/jobs',c:'g'},{t:'keyword: "senior software engineer"',c:'r'}]}],
+      time: [
+        {ts:'0:00.000',title:'Job search initiated',desc:'You searched for senior engineer roles in SF on Indeed.',tags:['indeed.com'],dot:'active'},
+        {ts:'0:00.420',title:'Job search sent to Meta + LinkedIn',desc:'Both networks now know you\'re looking for work. This is one of the most sensitive signals in digital advertising — it implies career dissatisfaction and high purchase intent for career services.',tags:['indeed.com','facebook.com'],dot:'danger'}],
+      metaKnows: ['Browser fingerprint','IP address','Job search: senior software engineer','Location: San Francisco','Salary range viewed: $175K-$280K','Career status: actively looking'] },
+
+    { label:'Browse listings', next:'View job',
+      perception: { url:'indeed.com/jobs?q=senior+software+engineer&l=san+francisco', title:'Senior Software Engineer', subtitle:'2,847 jobs', items:[
+        {title:'Senior Software Engineer - Stripe',sub:'$180K-$250K',highlight:true},{title:'Staff Engineer - Airbnb',sub:'$200K-$280K'},{title:'Senior Backend Engineer - Coinbase',sub:'$175K-$240K'}], footnote:'You scroll through listings, spending time on certain ones. Hover time reveals which companies interest you.' },
+      structure: [{name:'_fbp',value:'fb.1.1712980000.7788990011',status:'read',desc:'Scroll and hover tracking on job listings. Meta knows which companies and salary ranges catch your eye.'}],
+      source: [
+        {type:'Browser',badge:'send',url:'POST facebook.com/tr/?ev=scroll_depth',params:[{t:'Hover: Stripe 5.1s, Airbnb 2.3s, Coinbase 0.8s',c:'r'},{t:'Salary focus: $180K-$280K range',c:'r'}]}],
+      time: [
+        {ts:'0:20.300',title:'Employer interest mapped',desc:'Hover time reveals: Stripe is your top interest, followed by Airbnb. Coinbase barely registered. Your target employer list is known.',tags:['indeed.com','facebook.com'],dot:'meta'}],
+      metaKnows: ['Top interest: Stripe (5.1s hover)','Second: Airbnb','Salary expectation: $180K-$280K'] },
+
+    { label:'View job', next:'Apply',
+      perception: { url:'indeed.com/viewjob?jk=abc123&q=senior+software+engineer', title:'Senior Software Engineer - Stripe', subtitle:'San Francisco, CA - $180,000-$250,000 a year', body:'About the role: Build the next generation of payment infrastructure...\n\nRequirements: 5+ years experience, distributed systems, Go or Ruby...\n\nBenefits: Equity, health insurance, 401k matching, learning stipend', footnote:'Reading a specific job posting. This is extremely valuable targeting data.' },
+      structure: [{name:'_fbp',value:'fb.1.1712980000.7788990011',status:'read',desc:'ViewContent: specific job posting. Meta now knows your target company, role, and salary range.'}],
+      source: [
+        {type:'Browser',badge:'send',url:'POST facebook.com/tr/?ev=ViewContent',params:[{t:'content_name: "Senior SWE - Stripe"',c:'r'},{t:'content_category: "job"',c:'b'},{t:'value: 250000',c:'r'}]}],
+      time: [
+        {ts:'0:45.800',title:'ViewContent: Stripe SWE, $180-250K',desc:'Meta\'s interest graph tags you: "Stripe-interested", "senior engineer", "$180-250K range." Coding bootcamps, resume services, and LinkedIn Premium will now target you.',tags:['indeed.com','facebook.com'],dot:'danger'}],
+      metaKnows: ['Target company: Stripe','Role: Senior SWE','Salary target: $180-250K','Skills: distributed systems, Go, Ruby'] },
+
+    { label:'Apply', next:'Upload resume',
+      perception: { url:'indeed.com/applystart?jk=abc123', isForm:true, footnote:'Application form. You\'re entering your name, email, phone. Advanced Matching captures it all.' },
+      structure: [
+        {name:'_fbp',value:'fb.1.1712980000.7788990011',status:'read',desc:'Application start event. Highest intent signal in job searching.'},
+        {name:'_fbp_em',value:'[SHA256 hash]',status:'created',desc:'Your email and phone are hashed and sent to Meta. Your job-seeking activity is now linked to your real identity.'}],
+      source: [
+        {type:'Browser',badge:'send',url:'POST facebook.com/tr/?ev=Lead',params:[{t:'content_name: "Stripe SWE Application"',c:'r'},{t:'em: [SHA256]',c:'r'},{t:'ph: [SHA256]',c:'r'}]}],
+      time: [
+        {ts:'1:22.100',title:'Application started + identity linked',desc:'Meta matched your email to your Facebook account. Your job search is now permanently linked to your real identity. If your current employer runs Meta ads, they could theoretically target "employees looking to leave."',tags:['indeed.com','facebook.com'],dot:'danger'}],
+      metaKnows: ['Email: [matched to FB]','Identity: linked','Application: Stripe SWE','Risk: current employer could infer'] },
+
+    { label:'Upload resume', next:null,
+      perception: { url:'indeed.com/applystart?jk=abc123&step=resume', title:'Upload Resume', subtitle:'Stripe - Senior Software Engineer', body:'[File upload area]\n\nResume_2026.pdf uploaded successfully\n\nCover letter (optional): [text area]', footnote:'Application submitted. Your job search data is now spread across Meta, Google, and LinkedIn. Good luck with the interview.' },
+      structure: [{name:'_fbp',value:'fb.1.1712980000.7788990011',status:'read',desc:'CompleteRegistration / SubmitApplication event. The full application funnel is complete.'}],
+      source: [
+        {type:'Browser',badge:'send',url:'POST facebook.com/tr/?ev=CompleteRegistration',params:[{t:'content_name: "Stripe Application Submitted"',c:'r'},{t:'status: "complete"',c:'g'}]}],
+      time: [
+        {ts:'2:05.400',title:'Application submitted',desc:'Meta records: job application complete. Your profile is now: "actively job searching, senior SWE, $180-250K, applied to Stripe." Resume services, interview prep tools, and competing employers will target you aggressively.',tags:['indeed.com','facebook.com'],dot:'danger'},
+        {ts:'2:06.000',title:'Sensitive category profiling',desc:'Job-seeking status is classified as a "sensitive category" under GDPR and many privacy laws. Meta is technically not supposed to use it for ad targeting in the EU. In the US, there are no such restrictions.',tags:['facebook.com'],dot:'danger'}],
+      metaKnows: ['APPLICATION SUBMITTED: Stripe SWE','Career status: actively seeking','Profile: senior engineer, $180-250K','Sensitive: job-seeker (restricted in EU)','Retarget: interview prep, resume services'] }
+  ]
+}
+
 };
 
-// Pattern matchers for cookies that use dynamic suffixes
-const PATTERN_MATCHERS = [
-  { pattern: /^_ga_/, template: '_ga_*' },
-  { pattern: /^_gat_/, template: '_gat' },
-  { pattern: /^_dc_gtm_/, source:'Google', category:'analytics', purpose:'Google Tag Manager throttle cookie.', risk:3 },
-  { pattern: /^_hjSessionUser_/, source:'Hotjar', category:'analytics', purpose:'Hotjar session user ID. Tracks your behavior (clicks, scrolls, mouse movements) across visits.', risk:7 },
-  { pattern: /^_hjSession_/, source:'Hotjar', category:'analytics', purpose:'Hotjar current session data. Identifies a browsing session for heatmap/recording.', risk:6 },
-  { pattern: /^__utm/, source:'Google', category:'analytics', purpose:'Legacy Google Analytics UTM tracking cookie. Stores campaign data from URL parameters.', risk:5 },
-  { pattern: /^_pk_/, source:'Matomo', category:'analytics', purpose:'Matomo (Piwik) analytics tracker. Open-source GA alternative, usually self-hosted.', risk:4 },
-  { pattern: /^ajs_/, source:'Segment', category:'analytics', purpose:'Segment analytics.js tracking cookie. Routes your data to dozens of downstream tools.', risk:7 },
-];
+// ═══════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════
+let scenario = SCENARIOS.concert;
+let step = 0;
+let allMetaKnows = [];
 
-// ═══════════════════════════════════════════════════════════════════
-// SIMULATED COOKIE DATA (a realistic snapshot from a news site)
-// ═══════════════════════════════════════════════════════════════════
-const SIMULATED_COOKIES = [
-  // Meta cookies (the star of the show)
-  { name:'_fbp', value:'fb.1.1712988432109.1847205936', domain:'.currentsite.com', path:'/', expires:'2026-07-12T18:27:12Z', size:42, httpOnly:false, secure:true, sameSite:'None', priority:'Medium' },
-  { name:'_fbc', value:'fb.1.1712901200000.IwAR3xKz9...fbclid_abc123', domain:'.currentsite.com', path:'/', expires:'2026-07-12T12:00:00Z', size:68, httpOnly:false, secure:true, sameSite:'None', priority:'Medium' },
-  { name:'fr', value:'0aXQ2Rk8yOGVJNklPR3...Jlcm5ldC5jb20.AWW_k4xZkL2', domain:'.facebook.com', path:'/', expires:'2026-07-12T00:00:00Z', size:96, httpOnly:true, secure:true, sameSite:'None', priority:'Medium' },
-  { name:'datr', value:'dGhpcyBpcyBhIGZha2UgZGF0ciBjb29raWU', domain:'.facebook.com', path:'/', expires:'2028-04-12T00:00:00Z', size:48, httpOnly:true, secure:true, sameSite:'None', priority:'Medium' },
-
-  // Google
-  { name:'_ga', value:'GA1.2.1234567890.1712988432', domain:'.currentsite.com', path:'/', expires:'2028-04-12T18:27:12Z', size:36, httpOnly:false, secure:false, sameSite:'Lax', priority:'Medium' },
-  { name:'_ga_G8MXZB7XEH', value:'GS1.1.1712988432.1.1.1712988500.60.0.0', domain:'.currentsite.com', path:'/', expires:'2028-04-12T18:35:00Z', size:52, httpOnly:false, secure:false, sameSite:'Lax', priority:'Medium' },
-  { name:'_gid', value:'GA1.2.9876543210.1713074832', domain:'.currentsite.com', path:'/', expires:'2026-04-14T18:27:12Z', size:32, httpOnly:false, secure:false, sameSite:'Lax', priority:'Medium' },
-  { name:'_gcl_au', value:'1.1.1712988432.1712988432', domain:'.currentsite.com', path:'/', expires:'2026-07-12T18:27:12Z', size:30, httpOnly:false, secure:false, sameSite:'Lax', priority:'Medium' },
-  { name:'NID', value:'511=abc123XYZ...longEncodedValue', domain:'.google.com', path:'/', expires:'2026-10-12T00:00:00Z', size:178, httpOnly:true, secure:true, sameSite:'None', priority:'Medium' },
-  { name:'IDE', value:'AHWqTUnPQRSTUVWXYZ1234567890abc', domain:'.doubleclick.net', path:'/', expires:'2027-05-12T00:00:00Z', size:40, httpOnly:true, secure:true, sameSite:'None', priority:'High' },
-
-  // LinkedIn
-  { name:'li_sugr', value:'9a6b5c4d-3e2f-1a0b-c9d8-e7f6a5b4c3d2', domain:'.linkedin.com', path:'/', expires:'2026-07-12T00:00:00Z', size:44, httpOnly:false, secure:true, sameSite:'None', priority:'Medium' },
-  { name:'bcookie', value:'"v=2&abcdef12-3456-7890-abcd-ef1234567890"', domain:'.linkedin.com', path:'/', expires:'2027-04-12T00:00:00Z', size:54, httpOnly:false, secure:true, sameSite:'None', priority:'Medium' },
-  { name:'UserMatchHistory', value:'AQJ2PTEyMzQ1Njc4OTA', domain:'.linkedin.com', path:'/', expires:'2026-05-12T00:00:00Z', size:28, httpOnly:false, secure:true, sameSite:'None', priority:'Medium' },
-
-  // TikTok
-  { name:'_ttp', value:'2Fy7gRk8yOGVJNklPR3h5Q0lYVkpGbU5x', domain:'.currentsite.com', path:'/', expires:'2027-05-12T00:00:00Z', size:40, httpOnly:false, secure:true, sameSite:'None', priority:'Medium' },
-
-  // Snapchat
-  { name:'_scid', value:'1d2e3f4a-5b6c-7d8e-9f0a-1b2c3d4e5f6a', domain:'.currentsite.com', path:'/', expires:'2027-05-12T00:00:00Z', size:44, httpOnly:false, secure:true, sameSite:'None', priority:'Medium' },
-
-  // Hotjar
-  { name:'_hjSessionUser_1234567', value:'eyJpZCI6IjEyMzQ1Njc4LTkwYWItY2RlZi0xMjM0LTU2Nzg5MGFiY2RlZiIsImNyZWF0ZWQiOjE3MTI5ODg0MzIxMDksImV4aXN0aW5nIjpmYWxzZX0=', domain:'.currentsite.com', path:'/', expires:'2027-04-12T18:27:12Z', size:128, httpOnly:false, secure:false, sameSite:'Lax', priority:'Medium' },
-
-  // Cloudflare
-  { name:'__cf_bm', value:'oZ4bGLOHkRqKxM_vFE.W2XsOK0yMJOHxfCzN9LDpY-1712988432-1.0.1.1-abc123XYZ', domain:'.currentsite.com', path:'/', expires:'2026-04-13T18:57:12Z', size:72, httpOnly:true, secure:true, sameSite:'None', priority:'Medium' },
-
-  // Server session
-  { name:'_session_id', value:'a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6', domain:'currentsite.com', path:'/', expires:null, size:32, httpOnly:true, secure:true, sameSite:'Strict', priority:'Medium' },
-
-  // CSRF
-  { name:'csrftoken', value:'Wf9z2xK4vN8mQ3pR7yT1uH6jL0oI5sA', domain:'currentsite.com', path:'/', expires:'2027-04-12T18:27:12Z', size:32, httpOnly:false, secure:true, sameSite:'Lax', priority:'Medium' },
-
-  // Segment
-  { name:'ajs_anonymous_id', value:'"f47ac10b-58cc-4372-a567-0e02b2c3d479"', domain:'.currentsite.com', path:'/', expires:'2027-04-12T18:27:12Z', size:44, httpOnly:false, secure:false, sameSite:'Lax', priority:'Medium' },
-
-  // Pinterest
-  { name:'_pinterest_ct_ua', value:'dGhpcyBpcyBhIHBpbnRlcmVzdCBjb29raWU=', domain:'.currentsite.com', path:'/', expires:'2027-04-12T00:00:00Z', size:44, httpOnly:false, secure:true, sameSite:'None', priority:'Medium' },
-
-  // Microsoft
-  { name:'_uetsid', value:'abcdef12|34567890|4|0|ads.bing.com', domain:'.currentsite.com', path:'/', expires:null, size:48, httpOnly:false, secure:false, sameSite:'Lax', priority:'Medium' },
-
-  // Consent cookie
-  { name:'CookieConsent', value:'{"stamp":"abc","necessary":true,"preferences":false,"statistics":true,"marketing":true}', domain:'currentsite.com', path:'/', expires:'2027-04-12T00:00:00Z', size:96, httpOnly:false, secure:true, sameSite:'Lax', priority:'Medium' },
-];
-
-// ═══════════════════════════════════════════════════════════════════
-// ENRICHMENT ENGINE - classify every cookie across all dimensions
-// ═══════════════════════════════════════════════════════════════════
-function enrichCookie(c) {
-  const e = { ...c };
-  // Look up in knowledge base
-  let kb = KNOWN_COOKIES[c.name];
-  if (!kb) {
-    for (const pm of PATTERN_MATCHERS) {
-      if (pm.pattern.test(c.name)) {
-        kb = pm.template ? KNOWN_COOKIES[pm.template] : pm;
-        break;
-      }
-    }
-  }
-
-  if (kb) {
-    e.source = kb.source || 'Unknown';
-    e.category = kb.category || 'unknown';
-    e.purpose = kb.purpose || '';
-    e.risk = kb.risk ?? 5;
-    e.party = kb.party || (c.domain.startsWith('.') && !c.domain.includes('currentsite') ? '3rd' : '1st');
-    e.mechanism = kb.mechanism || 'unknown';
-    e.persistenceNote = kb.persistence || '';
-    e.respawns = kb.respawns || false;
-  } else {
-    // Heuristic classification
-    e.source = guessSource(c);
-    e.category = guessCategory(c);
-    e.purpose = 'Unknown cookie - not in the fingerprint database.';
-    e.risk = guessRisk(c);
-    e.party = c.domain.includes('currentsite') ? '1st' : '3rd';
-    e.mechanism = c.httpOnly ? 'server Set-Cookie' : 'JavaScript';
-    e.persistenceNote = '';
-    e.respawns = false;
-  }
-
-  // Time dimension
-  if (c.expires) {
-    const exp = new Date(c.expires);
-    const now = new Date();
-    e.ttlMs = exp - now;
-    e.ttlDays = Math.round(e.ttlMs / (1000*60*60*24));
-    e.timeClass = e.ttlDays <= 1 ? 'ephemeral' : e.ttlDays <= 30 ? 'short' : e.ttlDays <= 365 ? 'medium' : 'long';
-    e.isSession = false;
-  } else {
-    e.ttlMs = 0;
-    e.ttlDays = 0;
-    e.timeClass = 'session';
-    e.isSession = true;
-  }
-
-  // Structure dimension
-  e.encoding = detectEncoding(c.value);
-  e.namePattern = detectNamePattern(c.name);
-
-  return e;
+// ═══════════════════════════════════════════════════════════
+// CUSTOM URL SCENARIO GENERATOR
+// ═══════════════════════════════════════════════════════════
+function generateCustomScenario(url) {
+  const domain = url.replace(/https?:\/\//,'').split('/')[0].replace('www.','');
+  const path = url.replace(/https?:\/\//,'').split('/').slice(1).join('/') || '';
+  const name = domain.charAt(0).toUpperCase() + domain.slice(1);
+  return { name: name, steps: [
+    { label:'Page loads', next:'Browse content',
+      perception: { url: url, title: name + ' - Home', subtitle: 'You just visited ' + domain, items:[{title:'Main content area',sub:'The page looks completely normal.'},{title:'Navigation, images, text',sub:'Standard website layout.'}], footnote:'A normal-looking page. But tracking scripts are already running.' },
+      structure: [
+        {name:'_fbp',value:'fb.1.'+Date.now()+'.'+Math.floor(Math.random()*9999999999),status:'created',desc:'Meta Pixel generated your browser fingerprint. '+name+' runs Meta ads, so the pixel is embedded on every page.'},
+        {name:'_ga',value:'GA1.2.'+Math.floor(Math.random()*9999999999)+'.'+Date.now(),status:'created',desc:'Google Analytics cookie. '+name+' uses GA to track visitor behavior.'}],
+      source: [
+        {type:'Browser',badge:'get',url:'GET connect.facebook.net/en_US/fbevents.js',params:[{t:'Size: 62.4 KB',c:'b'},{t:'Type: Meta Pixel SDK',c:'r'}]},
+        {type:'Browser',badge:'send',url:'POST facebook.com/tr/?ev=PageView',params:[{t:'dl: '+domain+'/'+path,c:'g'},{t:'_fbp: [your browser ID]',c:'r'}]}],
+      time: [
+        {ts:'0:00.000',title:'You visit '+domain,desc:'Page loaded normally.',tags:[domain],dot:'active'},
+        {ts:'0:00.350',title:'_fbp planted + PageView sent',desc:'Meta now knows you visited '+domain+', your browser fingerprint, and your referrer.',tags:[domain,'facebook.com'],dot:'meta'}],
+      metaKnows: ['Browser fingerprint','IP address','Page: '+domain+'/'+path,'Screen resolution','Timezone','Language','Device type'] },
+    { label:'Browse content', next:'Interact',
+      perception: { url: url, title: name, subtitle: 'Browsing...', items:[{title:'You scroll and read content',sub:'Hovering over items, clicking links.'},{title:'Everything feels normal',sub:'No visible indication of tracking.'}], footnote:'Normal browsing. Meta is recording your scroll depth, hover targets, and time on page.' },
+      structure: [{name:'_fbp',value:'fb.1.'+Date.now()+'.'+Math.floor(Math.random()*9999999999),status:'read',desc:'Pixel reads your _fbp on every interaction to correlate behavior with your browser ID.'}],
+      source: [{type:'Browser',badge:'send',url:'POST facebook.com/tr/?ev=scroll_depth',params:[{t:'ScrolledAt: 70%',c:'y'},{t:'Time: 15s',c:'y'}]}],
+      time: [{ts:'0:15.000',title:'Engagement tracked',desc:'Scroll depth, time, and hover behavior sent to Meta.',tags:[domain,'facebook.com'],dot:'meta'}],
+      metaKnows: ['Scroll depth: 70%','Time on page: 15s','Content interests detected'] },
+    { label:'Interact', next:'Convert',
+      perception: { url: url+'?action=true', title: name + ' - Action', subtitle: 'You clicked something', body:'You interacted with the page - clicked a product, article, or button.', footnote:'Your click triggered a ViewContent event to Meta with details about what you engaged with.' },
+      structure: [{name:'_fbp',value:'fb.1.'+Date.now()+'.'+Math.floor(Math.random()*9999999999),status:'read',desc:'ViewContent event fired. Meta knows exactly what caught your attention.'}],
+      source: [{type:'Browser',badge:'send',url:'POST facebook.com/tr/?ev=ViewContent',params:[{t:'content_name: [page content]',c:'r'},{t:'_fbp: [your ID]',c:'r'}]}],
+      time: [{ts:'0:30.000',title:'ViewContent event fired',desc:'Meta records what you clicked on. Your interest profile updates in real time.',tags:[domain,'facebook.com'],dot:'meta'}],
+      metaKnows: ['Specific content viewed','Interest category inferred','Engagement level: medium-high'] },
+    { label:'Convert', next:null,
+      perception: { url: url+'?complete=true', isConfirm: true, footnote:'Whatever you did - signed up, purchased, subscribed - Meta captured the conversion event with full details.' },
+      structure: [{name:'_fbp',value:'fb.1.'+Date.now()+'.'+Math.floor(Math.random()*9999999999),status:'read',desc:'Conversion event. Full attribution chain recorded.'}],
+      source: [{type:'Browser',badge:'send',url:'POST facebook.com/tr/?ev=Purchase',params:[{t:'Conversion data sent to Meta',c:'r'}]}],
+      time: [{ts:'1:00.000',title:'Conversion recorded',desc:'Meta has your complete journey: arrival -> browse -> interest -> conversion. Your profile is permanently updated.',tags:[domain,'facebook.com'],dot:'danger'}],
+      metaKnows: ['CONVERSION recorded','Full journey: attributed','Profile: permanently updated'] }
+  ]};
 }
 
-function guessSource(c) {
-  const d = c.domain.toLowerCase();
-  if (d.includes('facebook') || d.includes('fbcdn')) return 'Meta';
-  if (d.includes('google') || d.includes('doubleclick') || d.includes('youtube')) return 'Google';
-  if (d.includes('amazon') || d.includes('amazonaws')) return 'Amazon';
-  if (d.includes('linkedin')) return 'LinkedIn';
-  if (d.includes('tiktok')) return 'TikTok';
-  if (d.includes('cloudflare')) return 'Cloudflare';
-  return 'Site';
+// ═══════════════════════════════════════════════════════════
+// RENDER
+// ═══════════════════════════════════════════════════════════
+function render() {
+  renderSteps();
+  const s = scenario.steps[step];
+  renderPerception(s); renderStructure(s); renderSource(s); renderTime(); renderMetaBar(s); renderNav(s);
 }
 
-function guessCategory(c) {
-  const n = c.name.toLowerCase();
-  if (n.includes('session') || n.includes('csrf') || n.includes('token')) return 'necessary';
-  if (n.includes('consent') || n.includes('cookie')) return 'necessary';
-  if (n.includes('_ga') || n.includes('_gid') || n.includes('hj') || n.includes('_pk')) return 'analytics';
-  if (n.includes('_fb') || n.includes('_gcl') || n.includes('ad') || n.includes('_tt')) return 'advertising';
-  return 'functional';
-}
-
-function guessRisk(c) {
-  let r = 3;
-  if (c.domain.includes('currentsite')) r -= 1; else r += 2;
-  if (!c.httpOnly) r += 1;
-  if (c.sameSite === 'None') r += 1;
-  if (c.size > 100) r += 1;
-  if (c.expires && new Date(c.expires) - new Date() > 365*24*60*60*1000) r += 1;
-  return Math.min(10, Math.max(0, r));
-}
-
-function detectEncoding(val) {
-  if (!val) return 'empty';
-  if (val.startsWith('{') || val.startsWith('[')) return 'JSON';
-  if (/^[A-Za-z0-9+/=]{20,}$/.test(val) && val.length % 4 === 0) return 'Base64';
-  if (/^[0-9a-f]{32,}$/i.test(val)) return 'Hex';
-  if (/^eyJ/.test(val)) return 'JWT/Base64';
-  if (/^\d+\.\d+\.\d+/.test(val)) return 'Dotted ID';
-  if (/^[0-9a-f]{8}-/.test(val)) return 'UUID';
-  if (/^".*"$/.test(val)) return 'Quoted string';
-  if (/^\d+$/.test(val)) return 'Numeric';
-  if (val.includes('|')) return 'Pipe-delimited';
-  return 'Opaque';
-}
-
-function detectNamePattern(name) {
-  if (name.startsWith('_fb') || name.startsWith('_fbc')) return 'Meta prefix (_fb*)';
-  if (name.startsWith('_ga') || name.startsWith('_gid') || name.startsWith('_gcl')) return 'Google prefix (_g*)';
-  if (name.startsWith('__')) return 'Double-underscore (server/infra)';
-  if (name.startsWith('_')) return 'Single-underscore (tracker convention)';
-  if (name.startsWith('ajs_')) return 'Segment prefix (ajs_*)';
-  if (name.startsWith('_hj')) return 'Hotjar prefix (_hj*)';
-  if (name.startsWith('_pk')) return 'Matomo prefix (_pk*)';
-  if (name.startsWith('_pin')) return 'Pinterest prefix (_pin*)';
-  if (name.startsWith('li_')) return 'LinkedIn prefix (li_*)';
-  return 'Custom';
-}
-
-function tryDecode(val) {
-  // Try base64
-  try {
-    if (/^[A-Za-z0-9+/=]{16,}$/.test(val) || /^eyJ/.test(val)) {
-      const decoded = atob(val.replace(/-/g,'+').replace(/_/g,'/'));
-      if (/^[\x20-\x7E\n\r\t]+$/.test(decoded)) return { type: 'Base64', decoded };
-    }
-  } catch(e) {}
-  // Try JSON parse
-  try {
-    const clean = val.replace(/^"|"$/g, '');
-    const parsed = JSON.parse(clean);
-    if (typeof parsed === 'object') return { type: 'JSON', decoded: JSON.stringify(parsed, null, 2) };
-  } catch(e) {}
-  // Try URL decode
-  try {
-    const decoded = decodeURIComponent(val);
-    if (decoded !== val) return { type: 'URL-encoded', decoded };
-  } catch(e) {}
-  return null;
-}
-
-// ═══════════════════════════════════════════════════════════════════
-// APP STATE
-// ═══════════════════════════════════════════════════════════════════
-let cookies = SIMULATED_COOKIES.map(enrichCookie);
-let activeDim = 'all';
-let activeCookie = null;
-let searchQuery = '';
-
-// ═══════════════════════════════════════════════════════════════════
-// RENDER ENGINE
-// ═══════════════════════════════════════════════════════════════════
-function renderStats() {
-  const bar = document.getElementById('statsBar');
-  const metaCount = cookies.filter(c => c.source === 'Meta').length;
-  const googleCount = cookies.filter(c => c.source === 'Google').length;
-  const thirdParty = cookies.filter(c => c.party === '3rd').length;
-  const trackers = cookies.filter(c => c.category === 'advertising').length;
-  const httpOnlyCount = cookies.filter(c => c.httpOnly).length;
-  const avgRisk = (cookies.reduce((s,c) => s + c.risk, 0) / cookies.length).toFixed(1);
-  const totalBytes = cookies.reduce((s,c) => s + c.size, 0);
-
-  bar.innerHTML = `
-    <div class="stat-item"><span class="stat-num" style="color:var(--meta-blue)">${metaCount}</span><span class="stat-label">Meta</span></div>
-    <div class="stat-item"><span class="stat-num" style="color:var(--google-red)">${googleCount}</span><span class="stat-label">Google</span></div>
-    <div class="stat-item"><span class="stat-num" style="color:var(--danger)">${thirdParty}</span><span class="stat-label">Third-party</span></div>
-    <div class="stat-item"><span class="stat-num" style="color:var(--warn)">${trackers}</span><span class="stat-label">Ad trackers</span></div>
-    <div class="stat-item"><span class="stat-num" style="color:var(--pink)">${httpOnlyCount}</span><span class="stat-label">HttpOnly</span></div>
-    <div class="stat-item"><span class="stat-num" style="color:var(--purple)">${avgRisk}</span><span class="stat-label">Avg risk</span></div>
-    <div class="stat-item"><span class="stat-num" style="color:var(--cyan)">${totalBytes}</span><span class="stat-label">Total bytes</span></div>
-  `;
-}
-
-function renderTabs() {
-  document.getElementById('count-all').textContent = cookies.length;
-  document.getElementById('count-perception').textContent = cookies.filter(c => !c.httpOnly || c.sameSite === 'None').length;
-  document.getElementById('count-structure').textContent = cookies.length;
-  document.getElementById('count-source').textContent = new Set(cookies.map(c => c.source)).size + ' sources';
-  document.getElementById('count-time').textContent = cookies.filter(c => !c.isSession).length + ' persistent';
-}
-
-function getFilteredCookies() {
-  let list = [...cookies];
-  if (searchQuery) {
-    const q = searchQuery.toLowerCase();
-    list = list.filter(c => c.name.toLowerCase().includes(q) || c.domain.toLowerCase().includes(q) || c.source.toLowerCase().includes(q));
-  }
-  // Sort: Meta first, then by risk desc
-  list.sort((a,b) => {
-    if (a.source === 'Meta' && b.source !== 'Meta') return -1;
-    if (b.source === 'Meta' && a.source !== 'Meta') return 1;
-    return b.risk - a.risk;
-  });
-  return list;
-}
-
-function getBadgeClass(c) {
-  const src = c.source.toLowerCase();
-  if (src === 'meta') return 'badge-meta';
-  if (src === 'google') return 'badge-google';
-  if (src === 'amazon') return 'badge-amazon';
-  return '';
-}
-
-function getCategoryBadge(cat) {
-  const map = { advertising:'badge-tracker', analytics:'badge-analytics', functional:'badge-functional', necessary:'badge-necessary', authentication:'badge-necessary' };
-  return map[cat] || '';
-}
-
-function renderCookieList() {
-  const list = document.getElementById('cookieList');
-  const filtered = getFilteredCookies();
-  document.getElementById('totalCount').textContent = filtered.length;
-
-  list.innerHTML = filtered.map(c => {
-    const isMeta = c.source === 'Meta';
-    const isActive = activeCookie && activeCookie.name === c.name && activeCookie.domain === c.domain;
-    return `
-      <div class="cookie-item ${isMeta ? 'meta-highlight' : ''} ${isActive ? 'active' : ''}"
-           onclick="selectCookie('${c.name}','${c.domain}')">
-        <div class="cookie-name">
-          ${isMeta ? '<span style="color:var(--meta-blue)">&#9632;</span>' : ''}
-          ${esc(c.name)}
-        </div>
-        <div class="cookie-domain">${esc(c.domain)}</div>
-        <div class="cookie-badges">
-          <span class="badge ${getBadgeClass(c)}">${esc(c.source)}</span>
-          <span class="badge ${getCategoryBadge(c.category)}">${esc(c.category)}</span>
-          <span class="badge ${c.party === '3rd' ? 'badge-3p' : 'badge-1p'}">${c.party}</span>
-          ${c.isSession ? '<span class="badge badge-session">session</span>' : '<span class="badge badge-persistent">' + c.ttlDays + 'd</span>'}
-          ${c.httpOnly ? '<span class="badge badge-httponly">httponly</span>' : ''}
-        </div>
-      </div>
-    `;
+function renderSteps() {
+  const bar = document.getElementById('stepsBar');
+  bar.innerHTML = scenario.steps.map((s,i) => {
+    const cls = i===step?'active':i<step?'done':'';
+    const conn = i < scenario.steps.length-1 ? `<div class="step-connector ${i<step?'done':''}"><span class="conn-badge">${i<step?'\\2713':''}</span></div>` : '';
+    return `<div class="step-item"><div class="step-box ${cls}" onclick="goTo(${i})"><span class="step-num">${String(i+1).padStart(2,'0')}</span><span class="step-label">${s.label}</span></div>${conn}</div>`;
   }).join('');
 }
 
-function selectCookie(name, domain) {
-  activeCookie = cookies.find(c => c.name === name && c.domain === domain);
-  renderCookieList();
-  renderDetail();
-}
+function renderPerception(s) {
+  const el = document.getElementById('p-perception');
+  const p = s.perception;
+  let bodyHTML = '';
 
-function renderDetail() {
-  const panel = document.getElementById('detailContent');
-  if (!activeCookie) {
-    renderDimensionOverview();
-    return;
+  if (p.isCheckout) {
+    bodyHTML = `<h3>Checkout</h3>${(p.checkoutItems||[]).map(ci => ci.item ? `<div class="checkout-row"><span>${esc(ci.item)}</span><span>${esc(ci.price)}</span></div>${ci.fee?'<div class="checkout-row" style="font-size:.6rem;color:var(--dim)"><span>${esc(ci.fee)}</span><span>${ci.fee&&!ci.item?esc(ci.price):''}</span></div>':''}` : `<div class="checkout-row" style="font-size:.6rem;color:var(--dim)"><span>${esc(ci.fee)}</span><span>${esc(ci.price)}</span></div>`).join('')}<div class="checkout-row checkout-total"><span>Total</span><span>${esc(p.total)}</span></div><div class="form-field" style="margin-top:.6rem">Email address</div><div class="form-field">First name</div><div class="form-field">Last name</div>`;
+  } else if (p.isForm) {
+    bodyHTML = `<h3>Enter Your Details</h3><div class="form-field">Email address</div><div class="form-field">First name</div><div class="form-field">Last name</div><div class="form-field">Phone number</div>`;
+  } else if (p.isConfirm) {
+    bodyHTML = `<h3 style="color:var(--safe)">Order Confirmed!</h3><p style="font-size:.7rem;color:var(--dim);margin-top:.3rem">Confirmation sent to your email. Thank you for your purchase.</p>`;
+  } else {
+    bodyHTML = `<h3>${esc(p.title)}</h3><div class="subtitle">${esc(p.subtitle||'')}</div>`;
+    if (p.body) bodyHTML += `<p style="font-size:.7rem;color:var(--dim);margin:.4rem 0;white-space:pre-line">${esc(p.body)}</p>`;
+    if (p.items) bodyHTML += p.items.map(it => `<div class="event-card ${it.highlight?'highlight':''}"><span class="ec-title">${esc(it.title)}</span><br><span class="ec-sub">${esc(it.sub)}</span>${it.warn?' <span class="ec-warn">'+esc(it.warn)+'</span>':''}</div>`).join('');
+    if (p.hasTicket) bodyHTML += `<div style="margin-top:.5rem;padding:.5rem;border:1px solid var(--border);border-radius:5px"><strong style="font-size:.75rem">${esc(p.ticketLabel)}</strong><br><span style="font-size:.65rem;color:var(--dim)">${esc(p.ticketPrice)}</span></div><button class="cta-btn">Get Tickets</button>`;
+    if (p.isCart) bodyHTML += `<button class="cta-btn gold">View Bag (1)</button>`;
   }
-  const c = activeCookie;
-  const isMeta = c.source === 'Meta';
-  const sourceIconClass = isMeta ? 'meta' : c.source === 'Google' ? 'google' : c.source === 'Amazon' ? 'amazon' : 'other';
-  const sourceEmoji = isMeta ? 'f' : c.source === 'Google' ? 'G' : c.source === 'Amazon' ? 'a' : c.source === 'LinkedIn' ? 'in' : c.source === 'TikTok' ? 'T' : '#';
-  const decoded = tryDecode(c.value);
 
-  const riskColor = c.risk >= 7 ? 'var(--danger)' : c.risk >= 4 ? 'var(--warn)' : 'var(--safe)';
-  const riskClass = c.risk >= 7 ? 'score-high' : c.risk >= 4 ? 'score-med' : 'score-low';
-  const riskLabel = c.risk >= 8 ? 'Critical privacy risk' : c.risk >= 6 ? 'Significant tracking' : c.risk >= 4 ? 'Moderate concern' : c.risk >= 2 ? 'Low risk' : 'Privacy-safe';
-
-  // Time bar
-  const maxDays = 730;
-  const barPct = c.isSession ? 3 : Math.min(100, (c.ttlDays / maxDays) * 100);
-  const timeColor = c.isSession ? 'var(--cyan)' : c.ttlDays > 365 ? 'var(--danger)' : c.ttlDays > 90 ? 'var(--warn)' : 'var(--safe)';
-
-  panel.innerHTML = `
-    <div class="detail-panel">
-      <!-- Header -->
-      <div class="detail-header">
-        <div class="source-icon ${sourceIconClass}">
-          <span style="font-family:var(--font);font-weight:800;font-size:1rem;${isMeta ? 'color:var(--meta-blue)' : ''}">${sourceEmoji}</span>
-        </div>
-        <div>
-          <h2 style="${isMeta ? 'color:var(--meta-blue)' : ''}">${esc(c.name)}</h2>
-          <div class="domain-label">${esc(c.domain)} ${c.party === '3rd' ? '(third-party)' : '(first-party)'}</div>
-        </div>
-      </div>
-
-      <!-- Privacy Risk Score -->
-      <div class="privacy-score">
-        <div class="score-ring ${riskClass}">${c.risk}/10</div>
-        <div>
-          <div style="font-weight:600;font-size:.95rem;color:${riskColor}">${riskLabel}</div>
-          <div style="color:var(--text-dim);font-size:.8rem;margin-top:.2rem">${esc(c.purpose)}</div>
-        </div>
-      </div>
-
-      <!-- ============ PERCEPTION ============ -->
-      <div class="section-title">&#x1f441; Perception - What can see this cookie?</div>
-      <div class="perception-layers" style="margin-bottom:1.5rem">
-        <div class="perc-layer">
-          <span class="perc-icon">&#x1f4dc;</span>
-          <span class="perc-label"><strong>JavaScript (document.cookie)</strong><br><span style="color:var(--text-dim);font-size:.75rem">${c.httpOnly ? 'Cookie is invisible to page scripts - server-only access' : 'Any script on the page can read and exfiltrate this value'}</span></span>
-          <span class="perc-status ${c.httpOnly ? 'perc-hidden' : 'perc-visible'}">${c.httpOnly ? 'HIDDEN' : 'EXPOSED'}</span>
-        </div>
-        <div class="perc-layer">
-          <span class="perc-icon">&#x1f6e1;</span>
-          <span class="perc-label"><strong>Cross-site requests (SameSite)</strong><br><span style="color:var(--text-dim);font-size:.75rem">${
-            c.sameSite === 'None' ? 'Sent on ALL cross-site requests - full third-party tracking capability' :
-            c.sameSite === 'Lax' ? 'Sent on top-level navigations only - limited cross-site leakage' :
-            'Never sent cross-site - strong isolation'
-          }</span></span>
-          <span class="perc-status ${c.sameSite === 'None' ? 'perc-visible' : 'perc-hidden'}">${c.sameSite}</span>
-        </div>
-        <div class="perc-layer">
-          <span class="perc-icon">&#x1f512;</span>
-          <span class="perc-label"><strong>Network visibility (Secure flag)</strong><br><span style="color:var(--text-dim);font-size:.75rem">${c.secure ? 'HTTPS only - encrypted in transit, invisible to network sniffers' : 'Sent over HTTP too - visible to anyone on your WiFi'}</span></span>
-          <span class="perc-status ${c.secure ? 'perc-hidden' : 'perc-visible'}">${c.secure ? 'ENCRYPTED' : 'CLEARTEXT'}</span>
-        </div>
-        <div class="perc-layer">
-          <span class="perc-icon">&#x1f50d;</span>
-          <span class="perc-label"><strong>DevTools visibility</strong><br><span style="color:var(--text-dim);font-size:.75rem">Always visible in Application > Cookies. This is where you found it.</span></span>
-          <span class="perc-status perc-visible">VISIBLE</span>
-        </div>
-        <div class="perc-layer">
-          <span class="perc-icon">&#x1f465;</span>
-          <span class="perc-label"><strong>User perception</strong><br><span style="color:var(--text-dim);font-size:.75rem">${
-            c.category === 'advertising' ? 'User has no idea this exists unless they check DevTools. Planted silently by a tracking pixel.' :
-            c.category === 'analytics' ? 'Invisible to the user. Set by an analytics script they probably did not consciously agree to.' :
-            c.category === 'necessary' ? 'User would not notice if this disappeared, but the site might break.' :
-            'Operates below the user awareness threshold.'
-          }</span></span>
-          <span class="perc-status perc-visible">INVISIBLE</span>
-        </div>
-      </div>
-
-      <!-- ============ STRUCTURE ============ -->
-      <div class="section-title">&#x1f9ec; Structure - Anatomy of the cookie</div>
-      <div class="anatomy">
-        <h3>Cookie Attributes</h3>
-        <div class="anatomy-row">
-          <span class="anatomy-label">Name</span>
-          <span class="anatomy-val" style="color:var(--accent)">${esc(c.name)}</span>
-          <div class="anatomy-indicator ind-blue"></div>
-        </div>
-        <div class="anatomy-row">
-          <span class="anatomy-label">Name Pattern</span>
-          <span class="anatomy-val">${esc(c.namePattern)}</span>
-        </div>
-        <div class="anatomy-row">
-          <span class="anatomy-label">Domain</span>
-          <span class="anatomy-val">${esc(c.domain)}</span>
-          <div class="anatomy-indicator ${c.domain.startsWith('.') ? 'ind-yellow' : 'ind-green'}"></div>
-        </div>
-        <div class="anatomy-row">
-          <span class="anatomy-label">Domain Scope</span>
-          <span class="anatomy-val" style="color:var(--text-dim);font-size:.75rem">${c.domain.startsWith('.') ? 'Leading dot = sent to ALL subdomains (wider scope, more exposure)' : 'Exact domain only (tight scope)'}</span>
-        </div>
-        <div class="anatomy-row">
-          <span class="anatomy-label">Path</span>
-          <span class="anatomy-val">${esc(c.path)}</span>
-          <div class="anatomy-indicator ${c.path === '/' ? 'ind-yellow' : 'ind-green'}"></div>
-        </div>
-        <div class="anatomy-row">
-          <span class="anatomy-label">Size</span>
-          <span class="anatomy-val">${c.size} bytes</span>
-        </div>
-        <div class="anatomy-row">
-          <span class="anatomy-label">Encoding</span>
-          <span class="anatomy-val" style="color:var(--cyan)">${esc(c.encoding)}</span>
-        </div>
-        <div class="anatomy-row">
-          <span class="anatomy-label">HttpOnly</span>
-          <span class="anatomy-val">${c.httpOnly ? '<span style="color:var(--safe)">Yes</span>' : '<span style="color:var(--danger)">No</span>'}</span>
-          <div class="anatomy-indicator ${c.httpOnly ? 'ind-green' : 'ind-red'}"></div>
-        </div>
-        <div class="anatomy-row">
-          <span class="anatomy-label">Secure</span>
-          <span class="anatomy-val">${c.secure ? '<span style="color:var(--safe)">Yes</span>' : '<span style="color:var(--danger)">No</span>'}</span>
-          <div class="anatomy-indicator ${c.secure ? 'ind-green' : 'ind-red'}"></div>
-        </div>
-        <div class="anatomy-row">
-          <span class="anatomy-label">SameSite</span>
-          <span class="anatomy-val">${esc(c.sameSite)}</span>
-          <div class="anatomy-indicator ${c.sameSite === 'Strict' ? 'ind-green' : c.sameSite === 'Lax' ? 'ind-yellow' : 'ind-red'}"></div>
-        </div>
-        <div class="anatomy-row">
-          <span class="anatomy-label">Priority</span>
-          <span class="anatomy-val">${esc(c.priority)}</span>
-        </div>
-      </div>
-
-      <div class="raw-block">
-        <h4>Raw Value</h4>
-        <div class="raw-value">${esc(c.value)}</div>
-      </div>
-      ${decoded ? `
-      <div class="raw-block">
-        <h4>Decoded (${esc(decoded.type)})</h4>
-        <div class="raw-value decoded-value">${esc(decoded.decoded)}</div>
-      </div>
-      ` : ''}
-
-      <!-- ============ SOURCE ============ -->
-      <div class="section-title">&#x1f4e1; Source - Where did this come from?</div>
-      <div class="dim-grid">
-        <div class="dim-card">
-          <h4>&#x1f3ed; Origin Company</h4>
-          <div class="value" style="color:${isMeta ? 'var(--meta-blue)' : c.source === 'Google' ? 'var(--google-red)' : 'var(--text)'}">${esc(c.source)}</div>
-          <div class="sub">${c.party === '3rd' ? 'Third-party: set by a domain you did NOT visit' : 'First-party: set by the site you are on'}</div>
-        </div>
-        <div class="dim-card">
-          <h4>&#x2699; Delivery Mechanism</h4>
-          <div class="value">${esc(c.mechanism)}</div>
-          <div class="sub">${c.httpOnly ? 'Server-side Set-Cookie header' : 'Client-side JavaScript document.cookie write'}</div>
-        </div>
-        <div class="dim-card">
-          <h4>&#x1f3af; Purpose Category</h4>
-          <div class="value">${esc(c.category)}</div>
-          <div class="sub">${
-            c.category === 'advertising' ? 'Used for ad targeting, retargeting, and conversion attribution' :
-            c.category === 'analytics' ? 'Collects usage statistics and behavioral data' :
-            c.category === 'functional' ? 'Enables site features but may also fingerprint' :
-            c.category === 'necessary' ? 'Required for basic site functionality or security' :
-            c.category === 'authentication' ? 'Session and login management' : ''
-          }</div>
-        </div>
-        <div class="dim-card">
-          <h4>&#x1f6a8; Party Classification</h4>
-          <div class="value" style="color:${c.party === '3rd' ? 'var(--danger)' : 'var(--safe)'}">${c.party}-party</div>
-          <div class="sub">${c.party === '3rd' ? 'Cross-site tracking capability. Browsers are actively blocking these.' : 'Scoped to the current site. Harder to use for cross-site tracking.'}</div>
-        </div>
-      </div>
-
-      ${isMeta || c.source === 'Google' ? `
-      <div class="flow-diagram">
-        <h3>&#x1f504; ${esc(c.source)} Tracking Flow for <code style="color:var(--accent)">${esc(c.name)}</code></h3>
-        <div class="flow-steps">
-          <div class="flow-step ${c.mechanism.includes('pixel') || c.mechanism.includes('JS') ? 'highlighted' : ''}">
-            <strong>1. Plant</strong>
-            ${c.mechanism.includes('pixel') ? 'Pixel JS loads' : c.mechanism.includes('JS') ? 'SDK script runs' : 'Server sets cookie'}
-          </div>
-          <div class="flow-arrow">&#x27a1;</div>
-          <div class="flow-step highlighted">
-            <strong>2. Assign ID</strong>
-            Cookie written with unique browser fingerprint
-          </div>
-          <div class="flow-arrow">&#x27a1;</div>
-          <div class="flow-step">
-            <strong>3. Beacon</strong>
-            Every page action sends ID + context to ${esc(c.source)}
-          </div>
-          <div class="flow-arrow">&#x27a1;</div>
-          <div class="flow-step">
-            <strong>4. Stitch</strong>
-            ${esc(c.source)} links ID across all sites running their pixel
-          </div>
-          <div class="flow-arrow">&#x27a1;</div>
-          <div class="flow-step" style="border-color:var(--danger)">
-            <strong>5. Profile</strong>
-            Cross-site browsing history feeds ad auction
-          </div>
-        </div>
-      </div>
-      ` : ''}
-
-      <!-- ============ TIME ============ -->
-      <div class="section-title">&#x23f3; Time Continuity - How long does it persist?</div>
-      <div class="dim-grid">
-        <div class="dim-card">
-          <h4>&#x1f4c5; Expiration</h4>
-          <div class="value" style="color:${timeColor}">${c.isSession ? 'Session' : c.expires ? new Date(c.expires).toLocaleDateString('en-US', {year:'numeric',month:'short',day:'numeric'}) : 'Unknown'}</div>
-          <div class="sub">${c.isSession ? 'Deleted when you close the browser tab' : c.ttlDays + ' days from now'}</div>
-        </div>
-        <div class="dim-card">
-          <h4>&#x1f3f7; Time Class</h4>
-          <div class="value">${c.timeClass}</div>
-          <div class="sub">${
-            c.timeClass === 'session' ? 'Ephemeral - gone when the tab closes' :
-            c.timeClass === 'ephemeral' ? 'Under 24 hours - very short-lived' :
-            c.timeClass === 'short' ? '1-30 days - moderate persistence' :
-            c.timeClass === 'medium' ? '1-12 months - long-lived tracker' :
-            '1+ years - maximum persistence, outlives most user attention'
-          }</div>
-        </div>
-        <div class="dim-card">
-          <h4>&#x1f501; Respawning</h4>
-          <div class="value" style="color:${c.respawns ? 'var(--danger)' : 'var(--safe)'}">${c.respawns ? 'Yes' : 'No'}</div>
-          <div class="sub">${c.respawns ? 'This cookie regenerates itself. Delete it and the tracking script will recreate it on next page load with the same or linked ID. This is zombie cookie behavior.' : 'Does not automatically regenerate after deletion.'}</div>
-        </div>
-        ${c.persistenceNote ? `
-        <div class="dim-card">
-          <h4>&#x1f4d6; Known Persistence</h4>
-          <div class="value" style="font-size:.85rem">${esc(c.persistenceNote)}</div>
-          <div class="sub">Documented by tracker research databases</div>
-        </div>
-        ` : ''}
-      </div>
-
-      <div style="margin-bottom:2rem">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.3rem">
-          <span style="font-size:.75rem;color:var(--text-dim)">Lifetime relative to 2-year max</span>
-          <span style="font-family:var(--font);font-size:.75rem;color:${timeColor}">${c.isSession ? 'session' : c.ttlDays + ' days'}</span>
-        </div>
-        <div class="timeline-bar">
-          <div class="timeline-fill" style="width:${barPct}%;background:${timeColor}">${c.isSession ? 'session' : c.ttlDays + 'd'}</div>
-        </div>
-        <div style="display:flex;justify-content:space-between;font-size:.6rem;color:var(--text-dim);margin-top:.2rem">
-          <span>now</span><span>30d</span><span>90d</span><span>1yr</span><span>2yr</span>
-        </div>
-      </div>
-
-      <!-- Fingerprint breakdown -->
-      <div class="section-title">&#x1f5c3; Fingerprint Breakdown</div>
-      <div class="fingerprint-grid" style="margin-bottom:2rem">
-        <div class="fp-cell"><div class="fp-label">Name</div><div class="fp-val" style="color:var(--accent)">${esc(c.name)}</div></div>
-        <div class="fp-cell"><div class="fp-label">Encoding</div><div class="fp-val" style="color:var(--cyan)">${esc(c.encoding)}</div></div>
-        <div class="fp-cell"><div class="fp-label">Size</div><div class="fp-val">${c.size}B</div></div>
-        <div class="fp-cell"><div class="fp-label">Party</div><div class="fp-val" style="color:${c.party==='3rd' ? 'var(--danger)' : 'var(--safe)'}">${c.party}</div></div>
-        <div class="fp-cell"><div class="fp-label">HttpOnly</div><div class="fp-val" style="color:${c.httpOnly ? 'var(--safe)' : 'var(--danger)'}">${c.httpOnly}</div></div>
-        <div class="fp-cell"><div class="fp-label">Secure</div><div class="fp-val" style="color:${c.secure ? 'var(--safe)' : 'var(--danger)'}">${c.secure}</div></div>
-        <div class="fp-cell"><div class="fp-label">SameSite</div><div class="fp-val">${esc(c.sameSite)}</div></div>
-        <div class="fp-cell"><div class="fp-label">Risk</div><div class="fp-val" style="color:${riskColor}">${c.risk}/10</div></div>
-        <div class="fp-cell"><div class="fp-label">TTL</div><div class="fp-val" style="color:${timeColor}">${c.isSession ? 'session' : c.ttlDays + 'd'}</div></div>
-        <div class="fp-cell"><div class="fp-label">Respawns</div><div class="fp-val" style="color:${c.respawns ? 'var(--danger)' : 'var(--safe)'}">${c.respawns}</div></div>
-        <div class="fp-cell"><div class="fp-label">Source</div><div class="fp-val">${esc(c.source)}</div></div>
-        <div class="fp-cell"><div class="fp-label">Mechanism</div><div class="fp-val" style="font-size:.55rem">${esc(c.mechanism)}</div></div>
-      </div>
-    </div>
-  `;
+  el.innerHTML = `<div class="browser fade-in"><div class="browser-chrome"><span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span><span class="browser-url">${esc(p.url||'')}</span></div><div class="browser-body">${bodyHTML}</div><div class="browser-footnote">${esc(p.footnote||'')}</div></div>`;
 }
 
-function renderDimensionOverview() {
-  const panel = document.getElementById('detailContent');
-  if (activeDim === 'all' || activeDim === 'source') {
-    renderSourceOverview(panel);
-  } else if (activeDim === 'perception') {
-    renderPerceptionOverview(panel);
-  } else if (activeDim === 'structure') {
-    renderStructureOverview(panel);
-  } else if (activeDim === 'time') {
-    renderTimeOverview(panel);
-  }
+function renderStructure(s) {
+  const el = document.getElementById('p-structure');
+  el.innerHTML = (s.structure||[]).map(c => `<div class="ck-card ${c.status==='created'?'new':''} fade-in"><div class="ck-header"><span class="ck-name">${esc(c.name)}</span><span class="ck-value">${esc(c.value)}</span><span class="ck-badge ${c.status==='created'?'ck-created':'ck-read'}">${c.status}</span></div><div class="ck-desc">${esc(c.desc)}</div></div>`).join('');
 }
 
-function renderSourceOverview(panel) {
-  const bySource = {};
-  cookies.forEach(c => { bySource[c.source] = (bySource[c.source]||0)+1; });
-  const byCategory = {};
-  cookies.forEach(c => { byCategory[c.category] = (byCategory[c.category]||0)+1; });
-  const byParty = { '1st':0, '3rd':0 };
-  cookies.forEach(c => byParty[c.party]++);
-
-  const maxS = Math.max(...Object.values(bySource));
-  const sourceColors = { Meta:'var(--meta-blue)', Google:'var(--google-red)', Amazon:'var(--amazon-orange)', LinkedIn:'var(--info)', TikTok:'var(--pink)', Cloudflare:'var(--cyan)', Snapchat:'var(--warn)', Pinterest:'var(--danger)', Hotjar:'var(--purple)', Segment:'var(--safe)', Microsoft:'var(--info)', Server:'var(--text-dim)', Site:'var(--text-dim)' };
-
-  panel.innerHTML = `
-    <div class="detail-panel">
-      <div class="section-title">&#x1f4e1; Source Dimension Overview</div>
-      <p style="color:var(--text-dim);margin-bottom:1.5rem;font-size:.85rem">Who planted cookies on this page and why. Click any cookie in the sidebar to drill down.</p>
-
-      <div class="overview-grid">
-        <div class="overview-card">
-          <div class="big-num" style="color:var(--danger)">${byParty['3rd']}</div>
-          <div class="card-label">Third-party cookies</div>
-        </div>
-        <div class="overview-card">
-          <div class="big-num" style="color:var(--safe)">${byParty['1st']}</div>
-          <div class="card-label">First-party cookies</div>
-        </div>
-        <div class="overview-card">
-          <div class="big-num" style="color:var(--meta-blue)">${bySource['Meta']||0}</div>
-          <div class="card-label">Meta trackers</div>
-        </div>
-        <div class="overview-card">
-          <div class="big-num" style="color:var(--warn)">${byCategory['advertising']||0}</div>
-          <div class="card-label">Ad cookies</div>
-        </div>
-      </div>
-
-      <h3 style="font-size:.9rem;margin-bottom:.8rem">Cookies by Source</h3>
-      <div class="bar-chart">
-        ${Object.entries(bySource).sort((a,b)=>b[1]-a[1]).map(([src, cnt]) => `
-          <div class="bar-row">
-            <span class="bar-label">${esc(src)}</span>
-            <div class="bar-track">
-              <div class="bar-fill" style="width:${(cnt/maxS)*100}%;background:${sourceColors[src]||'var(--accent)'}">${cnt}</div>
-            </div>
-          </div>
-        `).join('')}
-      </div>
-
-      <h3 style="font-size:.9rem;margin:1.5rem 0 .8rem">Cookies by Purpose</h3>
-      <div class="bar-chart">
-        ${Object.entries(byCategory).sort((a,b)=>b[1]-a[1]).map(([cat, cnt]) => {
-          const colors = { advertising:'var(--danger)', analytics:'var(--purple)', functional:'var(--warn)', necessary:'var(--safe)', authentication:'var(--info)' };
-          return `
-          <div class="bar-row">
-            <span class="bar-label">${esc(cat)}</span>
-            <div class="bar-track">
-              <div class="bar-fill" style="width:${(cnt/cookies.length)*100}%;background:${colors[cat]||'var(--accent)'}">${cnt}</div>
-            </div>
-          </div>
-        `}).join('')}
-      </div>
-
-      <div class="flow-diagram" style="margin-top:1.5rem">
-        <h3>&#x1f534; Meta's Cross-Site Tracking Architecture</h3>
-        <p style="color:var(--text-dim);font-size:.8rem;margin-bottom:1rem">How Meta builds a profile of you across the entire web using cookies found on this page:</p>
-        <div class="flow-steps">
-          <div class="flow-step highlighted"><strong>_fbp</strong>Browser ID planted by Meta Pixel on 10M+ sites</div>
-          <div class="flow-arrow">+</div>
-          <div class="flow-step highlighted"><strong>_fbc</strong>Click ID links your ad click to this visit</div>
-          <div class="flow-arrow">+</div>
-          <div class="flow-step highlighted"><strong>fr</strong>Encrypted retargeting token on facebook.com</div>
-          <div class="flow-arrow">&#x27a1;</div>
-          <div class="flow-step" style="border-color:var(--danger);min-width:180px"><strong>Ad Auction</strong>Your cross-site profile determines which ads you see and how much they cost</div>
-        </div>
-      </div>
-    </div>
-  `;
+function renderSource(s) {
+  const el = document.getElementById('p-source');
+  el.innerHTML = (s.source||[]).map(r => `<div class="nr-item fade-in"><div class="nr-header"><span class="nr-badge ${r.badge==='send'?'nr-send':'nr-get'}">${r.badge}</span><span class="nr-type">${esc(r.type)}</span></div><div class="nr-url">${esc(r.url)}</div>${r.params&&r.params.length?'<div class="nr-params">'+r.params.map(p=>'<span class="nr-param nr-param-'+p.c+'">'+esc(p.t)+'</span>').join('')+'</div>':''}${r.note?'<div class="nr-note">'+esc(r.note)+'</div>':''}</div>`).join('');
 }
 
-function renderPerceptionOverview(panel) {
-  const httpOnlyCount = cookies.filter(c => c.httpOnly).length;
-  const jsVisible = cookies.length - httpOnlyCount;
-  const secureCount = cookies.filter(c => c.secure).length;
-  const noneCount = cookies.filter(c => c.sameSite === 'None').length;
-  const laxCount = cookies.filter(c => c.sameSite === 'Lax').length;
-  const strictCount = cookies.filter(c => c.sameSite === 'Strict').length;
-
-  panel.innerHTML = `
-    <div class="detail-panel">
-      <div class="section-title">&#x1f441; Perception Dimension Overview</div>
-      <p style="color:var(--text-dim);margin-bottom:1.5rem;font-size:.85rem">What can see, read, and intercept each cookie. The gap between what users perceive and what actually exists.</p>
-
-      <div class="overview-grid">
-        <div class="overview-card">
-          <div class="big-num" style="color:var(--danger)">${jsVisible}</div>
-          <div class="card-label">JS-readable (exposed)</div>
-        </div>
-        <div class="overview-card">
-          <div class="big-num" style="color:var(--safe)">${httpOnlyCount}</div>
-          <div class="card-label">HttpOnly (hidden from JS)</div>
-        </div>
-        <div class="overview-card">
-          <div class="big-num" style="color:var(--danger)">${noneCount}</div>
-          <div class="card-label">SameSite=None (cross-site)</div>
-        </div>
-        <div class="overview-card">
-          <div class="big-num" style="color:var(--safe)">${secureCount}</div>
-          <div class="card-label">Secure (HTTPS only)</div>
-        </div>
-      </div>
-
-      <h3 style="font-size:.9rem;margin-bottom:.8rem">Visibility Layers</h3>
-      <div class="perception-layers" style="margin-bottom:1.5rem">
-        <div class="perc-layer" style="background:rgba(239,68,68,.06)">
-          <span class="perc-icon">&#x1f465;</span>
-          <span class="perc-label"><strong>User Awareness</strong> - The user sees NONE of these cookies during normal browsing. Zero perception.</span>
-          <span class="perc-status perc-visible">${cookies.length} hidden</span>
-        </div>
-        <div class="perc-layer">
-          <span class="perc-icon">&#x1f4dc;</span>
-          <span class="perc-label"><strong>JavaScript Access</strong> - ${jsVisible} cookies readable by any script on the page (XSS attack surface)</span>
-          <span class="perc-status ${jsVisible > httpOnlyCount ? 'perc-visible' : 'perc-hidden'}">${jsVisible} exposed</span>
-        </div>
-        <div class="perc-layer">
-          <span class="perc-icon">&#x1f310;</span>
-          <span class="perc-label"><strong>Cross-Site Leakage</strong> - ${noneCount} cookies sent to third-party servers on every request</span>
-          <span class="perc-status ${noneCount > 0 ? 'perc-visible' : 'perc-hidden'}">${noneCount} leaking</span>
-        </div>
-        <div class="perc-layer">
-          <span class="perc-icon">&#x1f6e1;</span>
-          <span class="perc-label"><strong>Network Sniffing</strong> - ${cookies.length - secureCount} cookies transmittable over unencrypted HTTP</span>
-          <span class="perc-status ${cookies.length - secureCount > 0 ? 'perc-visible' : 'perc-hidden'}">${cookies.length - secureCount} vulnerable</span>
-        </div>
-        <div class="perc-layer" style="background:rgba(34,197,94,.04)">
-          <span class="perc-icon">&#x1f50d;</span>
-          <span class="perc-label"><strong>DevTools</strong> - All ${cookies.length} cookies are visible here. This is the only complete view.</span>
-          <span class="perc-status perc-visible">${cookies.length} visible</span>
-        </div>
-      </div>
-
-      <h3 style="font-size:.9rem;margin-bottom:.8rem">SameSite Policy Distribution</h3>
-      <div class="bar-chart">
-        <div class="bar-row"><span class="bar-label">None (open)</span><div class="bar-track"><div class="bar-fill" style="width:${(noneCount/cookies.length)*100}%;background:var(--danger)">${noneCount}</div></div></div>
-        <div class="bar-row"><span class="bar-label">Lax (moderate)</span><div class="bar-track"><div class="bar-fill" style="width:${(laxCount/cookies.length)*100}%;background:var(--warn)">${laxCount}</div></div></div>
-        <div class="bar-row"><span class="bar-label">Strict (locked)</span><div class="bar-track"><div class="bar-fill" style="width:${(strictCount/cookies.length)*100}%;background:var(--safe)">${strictCount}</div></div></div>
-      </div>
-    </div>
-  `;
+function renderTime() {
+  const el = document.getElementById('p-time');
+  let items = [];
+  for (let i = 0; i <= step; i++) { (scenario.steps[i].time||[]).forEach(t => items.push(t)); }
+  el.innerHTML = items.map((t,i) => `<div class="tl-item fade-in"><div class="tl-dot-col"><div class="tl-dot ${t.dot||''}" title="${t.dot}"></div>${i<items.length-1?'<div class="tl-line"></div>':''}</div><div class="tl-body"><div class="tl-time">${esc(t.ts)}</div><div class="tl-title">${esc(t.title)}</div><div class="tl-desc">${esc(t.desc)}</div><div class="tl-tags">${(t.tags||[]).map(tg=>'<span class="tl-tag '+(tg.includes('facebook')||tg.includes('instagram')?'tl-tag-meta':tg.includes('linkedin')?'tl-tag-ig':'tl-tag-site')+'">'+esc(tg)+'</span>').join('')}</div></div></div>`).join('');
+  el.scrollTop = el.scrollHeight;
 }
 
-function renderStructureOverview(panel) {
-  const byEncoding = {};
-  cookies.forEach(c => { byEncoding[c.encoding] = (byEncoding[c.encoding]||0)+1; });
-  const byPattern = {};
-  cookies.forEach(c => { byPattern[c.namePattern] = (byPattern[c.namePattern]||0)+1; });
-  const totalBytes = cookies.reduce((s,c) => s+c.size, 0);
-  const avgSize = Math.round(totalBytes / cookies.length);
-  const maxSize = Math.max(...cookies.map(c => c.size));
-  const dotDomains = cookies.filter(c => c.domain.startsWith('.')).length;
-
-  panel.innerHTML = `
-    <div class="detail-panel">
-      <div class="section-title">&#x1f9ec; Structure Dimension Overview</div>
-      <p style="color:var(--text-dim);margin-bottom:1.5rem;font-size:.85rem">How cookies are encoded, named, scoped, and sized. The technical anatomy.</p>
-
-      <div class="overview-grid">
-        <div class="overview-card">
-          <div class="big-num" style="color:var(--cyan)">${totalBytes}</div>
-          <div class="card-label">Total bytes</div>
-        </div>
-        <div class="overview-card">
-          <div class="big-num" style="color:var(--accent)">${avgSize}B</div>
-          <div class="card-label">Avg cookie size</div>
-        </div>
-        <div class="overview-card">
-          <div class="big-num" style="color:var(--warn)">${maxSize}B</div>
-          <div class="card-label">Largest cookie</div>
-        </div>
-        <div class="overview-card">
-          <div class="big-num" style="color:var(--purple)">${dotDomains}</div>
-          <div class="card-label">Wildcard domains</div>
-        </div>
-      </div>
-
-      <h3 style="font-size:.9rem;margin-bottom:.8rem">Value Encoding Types</h3>
-      <div class="bar-chart">
-        ${Object.entries(byEncoding).sort((a,b)=>b[1]-a[1]).map(([enc, cnt]) => `
-          <div class="bar-row"><span class="bar-label">${esc(enc)}</span><div class="bar-track"><div class="bar-fill" style="width:${(cnt/cookies.length)*100}%;background:var(--cyan)">${cnt}</div></div></div>
-        `).join('')}
-      </div>
-
-      <h3 style="font-size:.9rem;margin:1.5rem 0 .8rem">Name Patterns</h3>
-      <div class="bar-chart">
-        ${Object.entries(byPattern).sort((a,b)=>b[1]-a[1]).map(([pat, cnt]) => `
-          <div class="bar-row"><span class="bar-label" style="width:200px;font-size:.65rem">${esc(pat)}</span><div class="bar-track"><div class="bar-fill" style="width:${(cnt/cookies.length)*100}%;background:var(--purple)">${cnt}</div></div></div>
-        `).join('')}
-      </div>
-
-      <h3 style="font-size:.9rem;margin:1.5rem 0 .8rem">Size Distribution</h3>
-      <div class="bar-chart">
-        ${cookies.sort((a,b)=>b.size-a.size).slice(0,10).map(c => `
-          <div class="bar-row"><span class="bar-label">${esc(c.name)}</span><div class="bar-track"><div class="bar-fill" style="width:${(c.size/maxSize)*100}%;background:${c.source==='Meta' ? 'var(--meta-blue)' : c.source==='Google' ? 'var(--google-red)' : 'var(--accent)'}">${c.size}B</div></div></div>
-        `).join('')}
-      </div>
-    </div>
-  `;
+function renderMetaBar(s) {
+  allMetaKnows = [];
+  for (let i = 0; i <= step; i++) { (scenario.steps[i].metaKnows||[]).forEach(m => { if (!allMetaKnows.includes(m)) allMetaKnows.push(m); }); }
+  const newOnes = s.metaKnows || [];
+  const el = document.getElementById('metaBar');
+  el.innerHTML = `<div class="meta-bar-title">What Meta knows about you after step ${step+1}</div><div class="meta-tags">${allMetaKnows.map(m => {
+    const isNew = newOnes.includes(m);
+    const isDanger = m.startsWith('PURCHASE') || m.startsWith('APPLICATION') || m.startsWith('CHECKOUT') || m.includes('INTENT') || m.includes('Retarget') || m.includes('Sensitive');
+    return `<span class="meta-tag ${isNew?'new':''} ${isDanger?'danger':''}">${esc(m)}</span>`;
+  }).join('')}</div>`;
 }
 
-function renderTimeOverview(panel) {
-  const sessionCount = cookies.filter(c => c.isSession).length;
-  const ephemeral = cookies.filter(c => !c.isSession && c.ttlDays <= 1).length;
-  const shortTerm = cookies.filter(c => c.ttlDays > 1 && c.ttlDays <= 30).length;
-  const medTerm = cookies.filter(c => c.ttlDays > 30 && c.ttlDays <= 365).length;
-  const longTerm = cookies.filter(c => c.ttlDays > 365).length;
-  const respawners = cookies.filter(c => c.respawns).length;
-  const sorted = [...cookies].filter(c=>!c.isSession).sort((a,b) => b.ttlDays - a.ttlDays);
-  const maxDays = sorted.length ? sorted[0].ttlDays : 1;
-
-  panel.innerHTML = `
-    <div class="detail-panel">
-      <div class="section-title">&#x23f3; Time Continuity Overview</div>
-      <p style="color:var(--text-dim);margin-bottom:1.5rem;font-size:.85rem">How long each cookie persists and whether it regenerates after deletion.</p>
-
-      <div class="overview-grid">
-        <div class="overview-card">
-          <div class="big-num" style="color:var(--cyan)">${sessionCount}</div>
-          <div class="card-label">Session (tab close)</div>
-        </div>
-        <div class="overview-card">
-          <div class="big-num" style="color:var(--safe)">${ephemeral + shortTerm}</div>
-          <div class="card-label">Short-lived (< 30d)</div>
-        </div>
-        <div class="overview-card">
-          <div class="big-num" style="color:var(--warn)">${medTerm}</div>
-          <div class="card-label">Medium (30d - 1yr)</div>
-        </div>
-        <div class="overview-card">
-          <div class="big-num" style="color:var(--danger)">${longTerm}</div>
-          <div class="card-label">Long-lived (1yr+)</div>
-        </div>
-      </div>
-
-      <div class="privacy-score" style="border-color:var(--danger)">
-        <div class="score-ring score-high" style="font-size:1.1rem">${respawners}</div>
-        <div>
-          <div style="font-weight:600;color:var(--danger)">Zombie Cookies (Respawners)</div>
-          <div style="color:var(--text-dim);font-size:.8rem;margin-top:.2rem">${respawners} of ${cookies.length} cookies regenerate after deletion. Clearing cookies does not stop tracking by these entities.</div>
-        </div>
-      </div>
-
-      <h3 style="font-size:.9rem;margin:1rem 0 .8rem">Lifetime Rankings</h3>
-      <div class="bar-chart">
-        ${sorted.slice(0,12).map(c => {
-          const color = c.ttlDays > 365 ? 'var(--danger)' : c.ttlDays > 90 ? 'var(--warn)' : 'var(--safe)';
-          return `
-          <div class="bar-row">
-            <span class="bar-label">${esc(c.name)}</span>
-            <div class="bar-track">
-              <div class="bar-fill" style="width:${(c.ttlDays/maxDays)*100}%;background:${color}">${c.ttlDays}d</div>
-            </div>
-          </div>
-        `}).join('')}
-      </div>
-
-      <h3 style="font-size:.9rem;margin:1.5rem 0 .8rem">Time Classes</h3>
-      <div class="bar-chart">
-        <div class="bar-row"><span class="bar-label">Session</span><div class="bar-track"><div class="bar-fill" style="width:${(sessionCount/cookies.length)*100}%;background:var(--cyan)">${sessionCount}</div></div></div>
-        <div class="bar-row"><span class="bar-label">Ephemeral</span><div class="bar-track"><div class="bar-fill" style="width:${(ephemeral/cookies.length)*100}%;background:var(--safe)">${ephemeral}</div></div></div>
-        <div class="bar-row"><span class="bar-label">Short (1-30d)</span><div class="bar-track"><div class="bar-fill" style="width:${(shortTerm/cookies.length)*100}%;background:var(--info)">${shortTerm}</div></div></div>
-        <div class="bar-row"><span class="bar-label">Medium (30d-1yr)</span><div class="bar-track"><div class="bar-fill" style="width:${(medTerm/cookies.length)*100}%;background:var(--warn)">${medTerm}</div></div></div>
-        <div class="bar-row"><span class="bar-label">Long (1yr+)</span><div class="bar-track"><div class="bar-fill" style="width:${(longTerm/cookies.length)*100}%;background:var(--danger)">${longTerm}</div></div></div>
-      </div>
-    </div>
-  `;
+function renderNav(s) {
+  document.getElementById('btnBack').disabled = step === 0;
+  const next = document.getElementById('btnNext');
+  if (step >= scenario.steps.length - 1) { next.innerHTML = 'Journey complete'; next.disabled = true; }
+  else { next.innerHTML = 'Next: ' + s.next + ' &#x2192;'; next.disabled = false; }
 }
 
-// ═══════════════════════════════════════════════════════════════════
-// EVENT HANDLERS
-// ═══════════════════════════════════════════════════════════════════
-document.querySelectorAll('.dim-tab').forEach(tab => {
-  tab.addEventListener('click', () => {
-    document.querySelectorAll('.dim-tab').forEach(t => t.classList.remove('active'));
-    tab.classList.add('active');
-    activeDim = tab.dataset.dim;
-    activeCookie = null;
-    renderCookieList();
-    renderDimensionOverview();
-  });
+function goTo(i) { step = i; render(); window.scrollTo({top:document.getElementById('stepsBar').offsetTop - 10, behavior:'smooth'}); }
+function nextStep() { if (step < scenario.steps.length-1) goTo(step+1); }
+function prevStep() { if (step > 0) goTo(step-1); }
+
+function loadScenario(key) {
+  scenario = SCENARIOS[key]; step = 0; allMetaKnows = [];
+  document.querySelectorAll('.scn-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector(`.scn-btn[onclick="loadScenario('${key}')"]`)?.classList.add('active');
+  render();
+}
+
+function loadCustom() {
+  const url = document.getElementById('customUrl').value.trim();
+  if (!url) return;
+  document.querySelectorAll('.scn-btn').forEach(b => b.classList.remove('active'));
+  scenario = generateCustomScenario(url); step = 0; allMetaKnows = [];
+  render();
+}
+
+function esc(s) { if (!s) return ''; const d=document.createElement('div'); d.textContent=String(s); return d.innerHTML; }
+
+document.addEventListener('keydown', e => {
+  if (e.key==='ArrowRight') nextStep();
+  if (e.key==='ArrowLeft') prevStep();
 });
+document.getElementById('customUrl').addEventListener('keydown', e => { if (e.key==='Enter') loadCustom(); });
 
-document.getElementById('searchInput').addEventListener('input', (e) => {
-  searchQuery = e.target.value;
-  renderCookieList();
-});
-
-function esc(s) { const d=document.createElement('div'); d.textContent=String(s); return d.innerHTML; }
-
-// ── Initial render ──
-renderStats();
-renderTabs();
-renderCookieList();
-renderDimensionOverview();
+render();
 </script>
 </body>
 </html>
