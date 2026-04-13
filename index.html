@@ -1,0 +1,1609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cookie Dimensions Explorer</title>
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #12121a;
+    --surface2: #1a1a26;
+    --surface3: #222233;
+    --border: #2a2a3d;
+    --text: #e0e0f0;
+    --text-dim: #8888aa;
+    --accent: #6366f1;
+    --accent-glow: rgba(99,102,241,.25);
+    --meta-blue: #1877f2;
+    --meta-glow: rgba(24,119,242,.3);
+    --google-red: #ea4335;
+    --amazon-orange: #ff9900;
+    --danger: #ef4444;
+    --warn: #f59e0b;
+    --safe: #22c55e;
+    --info: #3b82f6;
+    --purple: #a855f7;
+    --pink: #ec4899;
+    --cyan: #06b6d4;
+    --font: 'SF Mono', 'Cascadia Code', 'Fira Code', 'JetBrains Mono', monospace;
+    --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  html { font-size:14px; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── Scrollbar ── */
+  ::-webkit-scrollbar { width:6px; height:6px; }
+  ::-webkit-scrollbar-track { background: var(--surface); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius:3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+  /* ── Header ── */
+  .header {
+    padding: 2rem 3rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(180deg, rgba(99,102,241,.06) 0%, transparent 100%);
+  }
+  .header h1 {
+    font-family: var(--font);
+    font-size: 1.6rem;
+    font-weight: 700;
+    letter-spacing: -.02em;
+    background: linear-gradient(135deg, #6366f1, #a855f7, #ec4899);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .header p { color: var(--text-dim); margin-top:.4rem; font-size:.9rem; }
+
+  /* ── Dimension Tabs ── */
+  .dim-tabs {
+    display: flex;
+    gap: .5rem;
+    padding: 1rem 3rem;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .dim-tab {
+    padding: .6rem 1.2rem;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-dim);
+    font-family: var(--font);
+    font-size: .8rem;
+    cursor: pointer;
+    transition: all .2s;
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+  }
+  .dim-tab:hover { border-color: var(--accent); color: var(--text); }
+  .dim-tab.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+    box-shadow: 0 0 20px var(--accent-glow);
+  }
+  .dim-tab .tab-icon { font-size: 1rem; }
+  .dim-tab .tab-count {
+    background: rgba(255,255,255,.15);
+    padding: .1rem .45rem;
+    border-radius: 4px;
+    font-size: .7rem;
+  }
+
+  /* ── Main Layout ── */
+  .main { display: flex; min-height: calc(100vh - 140px); }
+
+  .sidebar {
+    width: 320px;
+    min-width: 320px;
+    border-right: 1px solid var(--border);
+    background: var(--surface);
+    overflow-y: auto;
+    max-height: calc(100vh - 140px);
+    position: sticky;
+    top: 60px;
+  }
+
+  .content {
+    flex: 1;
+    padding: 2rem 3rem;
+    overflow-y: auto;
+  }
+
+  /* ── Cookie List (sidebar) ── */
+  .cookie-list-header {
+    padding: 1rem 1.2rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .cookie-list-header h3 { font-size: .85rem; color: var(--text-dim); font-weight: 600; text-transform: uppercase; letter-spacing:.05em; }
+
+  .cookie-search {
+    width: 100%;
+    padding: .5rem 1rem;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: var(--font);
+    font-size: .8rem;
+    margin: .8rem 1.2rem;
+    width: calc(100% - 2.4rem);
+  }
+  .cookie-search:focus { outline:none; border-color: var(--accent); }
+
+  .cookie-item {
+    padding: .8rem 1.2rem;
+    border-bottom: 1px solid rgba(42,42,61,.5);
+    cursor: pointer;
+    transition: all .15s;
+    position: relative;
+  }
+  .cookie-item:hover { background: var(--surface2); }
+  .cookie-item.active { background: var(--surface3); border-left: 3px solid var(--accent); }
+  .cookie-item.meta-highlight {
+    border-left: 3px solid var(--meta-blue);
+    background: rgba(24,119,242,.05);
+  }
+  .cookie-item.meta-highlight.active {
+    background: rgba(24,119,242,.12);
+    border-left: 3px solid var(--meta-blue);
+    box-shadow: inset 0 0 30px var(--meta-glow);
+  }
+  .cookie-name {
+    font-family: var(--font);
+    font-size: .8rem;
+    font-weight: 600;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+  }
+  .cookie-domain { font-size: .7rem; color: var(--text-dim); margin-top:.2rem; }
+  .cookie-badges { display: flex; gap:.3rem; margin-top:.4rem; flex-wrap: wrap; }
+
+  .badge {
+    font-size: .6rem;
+    padding: .15rem .4rem;
+    border-radius: 3px;
+    font-family: var(--font);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .03em;
+  }
+  .badge-meta { background: rgba(24,119,242,.2); color: var(--meta-blue); }
+  .badge-google { background: rgba(234,67,53,.15); color: var(--google-red); }
+  .badge-amazon { background: rgba(255,153,0,.15); color: var(--amazon-orange); }
+  .badge-tracker { background: rgba(239,68,68,.15); color: var(--danger); }
+  .badge-analytics { background: rgba(168,85,247,.15); color: var(--purple); }
+  .badge-functional { background: rgba(34,197,94,.15); color: var(--safe); }
+  .badge-necessary { background: rgba(59,130,246,.15); color: var(--info); }
+  .badge-session { background: rgba(6,182,212,.15); color: var(--cyan); }
+  .badge-persistent { background: rgba(245,158,11,.15); color: var(--warn); }
+  .badge-httponly { background: rgba(236,72,153,.15); color: var(--pink); }
+  .badge-3p { background: rgba(239,68,68,.2); color: var(--danger); }
+  .badge-1p { background: rgba(34,197,94,.15); color: var(--safe); }
+
+  /* ── Detail Panel ── */
+  .detail-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 60vh;
+    color: var(--text-dim);
+    text-align: center;
+  }
+  .detail-empty .icon { font-size: 4rem; margin-bottom: 1rem; opacity:.3; }
+
+  .detail-panel { animation: fadeIn .3s ease; }
+  @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
+
+  .detail-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .detail-header .source-icon {
+    width: 48px; height: 48px;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.4rem;
+    flex-shrink: 0;
+  }
+  .detail-header .source-icon.meta { background: rgba(24,119,242,.15); }
+  .detail-header .source-icon.google { background: rgba(234,67,53,.1); }
+  .detail-header .source-icon.amazon { background: rgba(255,153,0,.1); }
+  .detail-header .source-icon.other { background: var(--surface3); }
+
+  .detail-header h2 {
+    font-family: var(--font);
+    font-size: 1.3rem;
+    font-weight: 700;
+  }
+  .detail-header .domain-label { color: var(--text-dim); font-size:.85rem; }
+
+  /* ── Dimension Cards ── */
+  .dim-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+  .dim-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.2rem;
+    transition: all .2s;
+  }
+  .dim-card:hover { border-color: var(--accent); box-shadow: 0 0 20px rgba(99,102,241,.08); }
+  .dim-card h4 {
+    font-size: .7rem;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: var(--text-dim);
+    margin-bottom: .8rem;
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+  }
+  .dim-card .value {
+    font-family: var(--font);
+    font-size: 1.1rem;
+    font-weight: 600;
+  }
+  .dim-card .sub { color: var(--text-dim); font-size:.75rem; margin-top:.3rem; line-height:1.4; }
+
+  /* ── Raw Value Display ── */
+  .raw-block {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  .raw-block h4 {
+    font-size: .7rem;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: var(--text-dim);
+    margin-bottom: .6rem;
+  }
+  .raw-value {
+    font-family: var(--font);
+    font-size: .8rem;
+    word-break: break-all;
+    color: var(--warn);
+    background: var(--surface);
+    padding: .6rem .8rem;
+    border-radius: 6px;
+    max-height: 120px;
+    overflow-y: auto;
+    line-height: 1.5;
+  }
+  .decoded-value { color: var(--cyan); }
+
+  /* ── Anatomy Diagram ── */
+  .anatomy {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+  .anatomy h3 {
+    font-size: .85rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+  }
+  .anatomy-row {
+    display: flex;
+    align-items: center;
+    padding: .5rem 0;
+    border-bottom: 1px solid rgba(42,42,61,.4);
+    gap: 1rem;
+  }
+  .anatomy-row:last-child { border-bottom: none; }
+  .anatomy-label {
+    font-family: var(--font);
+    font-size: .75rem;
+    color: var(--text-dim);
+    width: 110px;
+    flex-shrink: 0;
+    text-align: right;
+  }
+  .anatomy-val {
+    font-family: var(--font);
+    font-size: .8rem;
+    flex: 1;
+  }
+  .anatomy-indicator {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .ind-green { background: var(--safe); box-shadow: 0 0 6px rgba(34,197,94,.4); }
+  .ind-red { background: var(--danger); box-shadow: 0 0 6px rgba(239,68,68,.4); }
+  .ind-yellow { background: var(--warn); box-shadow: 0 0 6px rgba(245,158,11,.4); }
+  .ind-blue { background: var(--info); box-shadow: 0 0 6px rgba(59,130,246,.4); }
+
+  /* ── Timeline ── */
+  .timeline-bar {
+    height: 32px;
+    background: var(--surface2);
+    border-radius: 6px;
+    position: relative;
+    overflow: hidden;
+    margin: .6rem 0;
+  }
+  .timeline-fill {
+    height: 100%;
+    border-radius: 6px;
+    position: absolute;
+    left: 0;
+    top: 0;
+    display: flex;
+    align-items: center;
+    padding-left: .8rem;
+    font-family: var(--font);
+    font-size: .7rem;
+    color: #fff;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  /* ── Privacy Score ── */
+  .privacy-score {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.2rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 1.5rem;
+  }
+  .score-ring {
+    width: 64px; height: 64px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font);
+    font-size: 1.3rem;
+    font-weight: 700;
+    flex-shrink: 0;
+    position: relative;
+  }
+  .score-ring::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 3px solid;
+    opacity: .3;
+  }
+  .score-high { color: var(--danger); }
+  .score-high::before { border-color: var(--danger); }
+  .score-med { color: var(--warn); }
+  .score-med::before { border-color: var(--warn); }
+  .score-low { color: var(--safe); }
+  .score-low::before { border-color: var(--safe); }
+
+  /* ── Perception Viz ── */
+  .perception-layers {
+    display: flex;
+    flex-direction: column;
+    gap: .3rem;
+  }
+  .perc-layer {
+    display: flex;
+    align-items: center;
+    gap: .8rem;
+    padding: .6rem .8rem;
+    border-radius: 6px;
+    background: var(--surface2);
+    font-size: .8rem;
+  }
+  .perc-layer .perc-icon { font-size: 1.1rem; width: 24px; text-align: center; }
+  .perc-layer .perc-label { flex: 1; }
+  .perc-layer .perc-status {
+    font-family: var(--font);
+    font-size: .7rem;
+    font-weight: 600;
+    padding: .15rem .5rem;
+    border-radius: 4px;
+  }
+  .perc-visible { background: rgba(239,68,68,.12); color: var(--danger); }
+  .perc-hidden { background: rgba(34,197,94,.12); color: var(--safe); }
+
+  /* ── Aggregate stats bar ── */
+  .stats-bar {
+    display: flex;
+    gap: 1.5rem;
+    padding: 1rem 3rem;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+  .stat-item {
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+  }
+  .stat-num {
+    font-family: var(--font);
+    font-size: 1.1rem;
+    font-weight: 700;
+  }
+  .stat-label { font-size: .75rem; color: var(--text-dim); }
+
+  /* ── Tracking Flow Diagram ── */
+  .flow-diagram {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+  .flow-diagram h3 { font-size:.85rem; font-weight:600; margin-bottom:1rem; }
+  .flow-steps {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    flex-wrap: wrap;
+  }
+  .flow-step {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: .6rem 1rem;
+    font-size: .75rem;
+    text-align: center;
+    min-width: 100px;
+  }
+  .flow-step.highlighted {
+    border-color: var(--meta-blue);
+    background: rgba(24,119,242,.08);
+    box-shadow: 0 0 15px var(--meta-glow);
+  }
+  .flow-arrow { color: var(--text-dim); font-size: 1.2rem; }
+  .flow-step strong { display:block; font-family:var(--font); font-size:.7rem; margin-bottom:.2rem; }
+
+  /* ── Section Headers ── */
+  .section-title {
+    font-size: 1rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    padding-bottom: .5rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* ── Overview Dashboard (when no cookie selected, per dimension) ── */
+  .overview-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+  .overview-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.2rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all .2s;
+  }
+  .overview-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+  .overview-card .big-num {
+    font-family: var(--font);
+    font-size: 2.4rem;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: .4rem;
+  }
+  .overview-card .card-label {
+    font-size: .75rem;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: .04em;
+  }
+
+  /* ── Chart bars ── */
+  .bar-chart { margin: 1rem 0; }
+  .bar-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: .4rem;
+    gap: .8rem;
+  }
+  .bar-label {
+    font-family: var(--font);
+    font-size: .7rem;
+    width: 120px;
+    text-align: right;
+    color: var(--text-dim);
+    flex-shrink: 0;
+  }
+  .bar-track {
+    flex: 1;
+    height: 20px;
+    background: var(--surface2);
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+  }
+  .bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    padding-left: .5rem;
+    font-family: var(--font);
+    font-size: .65rem;
+    color: #fff;
+    font-weight: 600;
+    transition: width .6s ease;
+  }
+
+  /* ── Fingerprint section ── */
+  .fingerprint-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: .5rem;
+  }
+  .fp-cell {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: .6rem;
+    font-family: var(--font);
+    font-size: .65rem;
+    text-align: center;
+    transition: all .2s;
+  }
+  .fp-cell:hover { border-color: var(--accent); }
+  .fp-cell .fp-label { color: var(--text-dim); margin-bottom:.2rem; font-size:.6rem; text-transform:uppercase; }
+  .fp-cell .fp-val { font-weight: 600; word-break: break-all; }
+
+  /* ── Responsive ── */
+  @media (max-width: 900px) {
+    .main { flex-direction: column; }
+    .sidebar { width: 100%; min-width: unset; max-height: 40vh; position: static; }
+    .content { padding: 1.5rem; }
+    .header { padding: 1.5rem; }
+    .dim-tabs { padding: .8rem 1.5rem; overflow-x: auto; }
+    .stats-bar { padding: .8rem 1.5rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Cookie Dimensions Explorer</h1>
+  <p>Deep-dive into every tracking cookie on any page - perception, structure, source, and time continuity</p>
+</div>
+
+<div class="stats-bar" id="statsBar"></div>
+
+<div class="dim-tabs" id="dimTabs">
+  <button class="dim-tab active" data-dim="all">
+    <span class="tab-icon">*</span> All <span class="tab-count" id="count-all">0</span>
+  </button>
+  <button class="dim-tab" data-dim="perception">
+    <span class="tab-icon">&#x1f441;</span> Perception <span class="tab-count" id="count-perception">0</span>
+  </button>
+  <button class="dim-tab" data-dim="structure">
+    <span class="tab-icon">&#x1f9ec;</span> Structure <span class="tab-count" id="count-structure">0</span>
+  </button>
+  <button class="dim-tab" data-dim="source">
+    <span class="tab-icon">&#x1f4e1;</span> Source <span class="tab-count" id="count-source">0</span>
+  </button>
+  <button class="dim-tab" data-dim="time">
+    <span class="tab-icon">&#x23f3;</span> Time <span class="tab-count" id="count-time">0</span>
+  </button>
+</div>
+
+<div class="main">
+  <div class="sidebar">
+    <div class="cookie-list-header">
+      <h3>Cookies</h3>
+      <span id="totalCount" style="font-family:var(--font);font-size:.8rem;color:var(--accent)">0</span>
+    </div>
+    <input class="cookie-search" id="searchInput" placeholder="Filter cookies..." />
+    <div id="cookieList"></div>
+  </div>
+  <div class="content" id="detailContent">
+    <div class="detail-empty">
+      <div class="icon">&#x1f36a;</div>
+      <h3>Select a cookie to explore</h3>
+      <p style="margin-top:.5rem;color:var(--text-dim)">Or browse the dimension overviews above</p>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════
+// COOKIE KNOWLEDGE BASE - fingerprint patterns for known trackers
+// ═══════════════════════════════════════════════════════════════════
+const KNOWN_COOKIES = {
+  // ── Meta / Facebook ──
+  '_fbp':       { source:'Meta', category:'advertising', purpose:'Facebook Pixel browser ID. Identifies browsers for ad targeting across the Meta Audience Network. Set by the Meta Pixel JS even on sites that never asked for it.', risk:9, party:'3rd', mechanism:'JS pixel drop', persistence:'90 days rolling', respawns: true },
+  '_fbc':       { source:'Meta', category:'advertising', purpose:'Facebook Click ID. Stores the fbclid URL parameter from Meta ad clicks. Links your visit back to the exact ad you clicked so Meta can attribute the conversion.', risk:9, party:'3rd', mechanism:'JS pixel on fbclid detection', persistence:'90 days rolling', respawns: true },
+  'fr':         { source:'Meta', category:'advertising', purpose:'Primary Meta ad-delivery and retargeting cookie. Contains an encrypted user fragment + timestamp. This is the main cookie Meta uses to show you "relevant" ads across the internet.', risk:10, party:'3rd', mechanism:'facebook.com iframe/pixel', persistence:'90 days', respawns: true },
+  'datr':       { source:'Meta', category:'functional', purpose:'Browser-level identifier set by facebook.com. Persists even when logged out. Meta claims it is for "security" but it uniquely fingerprints your browser across all sites with Facebook social plugins.', risk:8, party:'3rd', mechanism:'facebook.com domain', persistence:'2 years', respawns: true },
+  'sb':         { source:'Meta', category:'functional', purpose:'Facebook session bookkeeping. Stores browser-level identification to "secure" your account. In practice, another persistent fingerprint.', risk:6, party:'3rd', mechanism:'facebook.com domain', persistence:'2 years', respawns: false },
+  'wd':         { source:'Meta', category:'functional', purpose:'Stores your browser window dimensions. Ostensibly for layout, but window size is a known fingerprinting vector (screen resolution entropy).', risk:4, party:'1st', mechanism:'facebook.com JS', persistence:'7 days', respawns: false },
+  'c_user':     { source:'Meta', category:'authentication', purpose:'Your Facebook user ID in plain text. Present when logged in. Combined with xs cookie for session auth.', risk:5, party:'1st', mechanism:'facebook.com login', persistence:'session/1 year', respawns: false },
+  'xs':         { source:'Meta', category:'authentication', purpose:'Facebook session secret token. Paired with c_user for authentication. HttpOnly so JS cannot read it.', risk:3, party:'1st', mechanism:'facebook.com login', persistence:'1 year', respawns: false },
+  'presence':   { source:'Meta', category:'functional', purpose:'Facebook Messenger online presence indicator. Tracks when you were last active.', risk:5, party:'1st', mechanism:'facebook.com JS', persistence:'session', respawns: false },
+
+  // ── Google ──
+  '_ga':        { source:'Google', category:'analytics', purpose:'Google Analytics client ID. A randomly generated number + first-visit timestamp that uniquely identifies your browser. Sent with every pageview across any site running GA.', risk:7, party:'1st (set by GA JS)', mechanism:'analytics.js / gtag.js', persistence:'2 years', respawns: true },
+  '_ga_*':      { source:'Google', category:'analytics', purpose:'GA4 measurement ID scoped cookie. Same as _ga but namespaced per GA property. Enables cross-domain user identity stitching.', risk:7, party:'1st', mechanism:'gtag.js', persistence:'2 years', respawns: true },
+  '_gid':       { source:'Google', category:'analytics', purpose:'Google Analytics daily session ID. Distinguishes unique visitors within a 24-hour window. Refreshes daily but maps back to _ga.', risk:6, party:'1st', mechanism:'analytics.js', persistence:'24 hours', respawns: true },
+  '_gat':       { source:'Google', category:'analytics', purpose:'GA request throttle. Set to 1 for 1 minute to rate-limit beacon hits. Minimal privacy impact but reveals GA is active.', risk:2, party:'1st', mechanism:'analytics.js', persistence:'1 minute', respawns: false },
+  '_gcl_au':    { source:'Google', category:'advertising', purpose:'Google Ads conversion linker. Stores a click ID so Google can attribute your purchase back to an ad click across domains.', risk:8, party:'1st', mechanism:'conversion linker tag', persistence:'90 days', respawns: true },
+  'NID':        { source:'Google', category:'advertising', purpose:'Google preferences + ad cookie. Contains an encrypted record of your Google preferences and recent search history. Used for ad personalization.', risk:8, party:'3rd', mechanism:'google.com domain', persistence:'6 months', respawns: true },
+  'APISID':     { source:'Google', category:'authentication', purpose:'Google authentication cookie used by embedded YouTube players, Maps, and other Google widgets. Links your activity on third-party sites back to your Google account.', risk:7, party:'3rd', mechanism:'google.com domain', persistence:'2 years', respawns: false },
+  '1P_JAR':     { source:'Google', category:'advertising', purpose:'Google advertising cookie that collects site statistics and tracks conversion rates for Google ads.', risk:7, party:'3rd', mechanism:'google.com domain', persistence:'1 month', respawns: true },
+  'IDE':        { source:'Google', category:'advertising', purpose:'DoubleClick/Google Ad Manager cookie. Used for ad serving, retargeting, and cross-site conversion tracking. One of the most pervasive ad-tech cookies.', risk:9, party:'3rd', mechanism:'doubleclick.net', persistence:'1 year (13 months in EU)', respawns: true },
+
+  // ── Amazon ──
+  'ad-id':      { source:'Amazon', category:'advertising', purpose:'Amazon Advertising identifier. Tracks your browsing across sites in the Amazon ad network for retargeting.', risk:8, party:'3rd', mechanism:'amazon-adsystem.com', persistence:'varies', respawns: true },
+  'session-id': { source:'Amazon', category:'functional', purpose:'Amazon session identifier. Persists your shopping session and cart. Surprisingly long-lived for a "session" cookie.', risk:4, party:'1st', mechanism:'amazon.com', persistence:'2 years (!)', respawns: false },
+
+  // ── TikTok ──
+  '_ttp':       { source:'TikTok', category:'advertising', purpose:'TikTok Pixel tracking. Similar to Meta _fbp - identifies browsers for ad attribution across the TikTok Ads network.', risk:9, party:'3rd', mechanism:'TikTok Pixel JS', persistence:'13 months', respawns: true },
+  'tt_webid':   { source:'TikTok', category:'analytics', purpose:'TikTok web visitor identifier. Assigned to every visitor on sites with TikTok tracking.', risk:8, party:'3rd', mechanism:'TikTok SDK', persistence:'13 months', respawns: true },
+
+  // ── Microsoft / LinkedIn ──
+  '_uetsid':    { source:'Microsoft', category:'advertising', purpose:'Bing UET (Universal Event Tracking) session ID. Tracks your activity for Microsoft Advertising conversion attribution.', risk:7, party:'1st', mechanism:'UET tag JS', persistence:'session', respawns: false },
+  'li_sugr':    { source:'LinkedIn', category:'advertising', purpose:'LinkedIn Insight Tag browser match cookie. Maps browser to LinkedIn profile for ad targeting, even if you are not logged in to LinkedIn.', risk:8, party:'3rd', mechanism:'LinkedIn Insight Tag', persistence:'90 days', respawns: true },
+  'bcookie':    { source:'LinkedIn', category:'functional', purpose:'LinkedIn browser identifier. Set on first visit to any page with LinkedIn plugins.', risk:6, party:'3rd', mechanism:'linkedin.com', persistence:'1 year', respawns: false },
+  'UserMatchHistory': { source:'LinkedIn', category:'advertising', purpose:'LinkedIn ad syncing and retargeting. Enables cross-site audience matching.', risk:8, party:'3rd', mechanism:'linkedin.com', persistence:'30 days', respawns: true },
+
+  // ── Pinterest ──
+  '_pinterest_ct_ua': { source:'Pinterest', category:'advertising', purpose:'Pinterest conversion tracking. Monitors actions after viewing or clicking Pinterest ads.', risk:7, party:'3rd', mechanism:'Pinterest Tag JS', persistence:'1 year', respawns: true },
+  '_pin_unauth':      { source:'Pinterest', category:'analytics', purpose:'Pinterest analytics for non-authenticated users. Tracks browsing behavior.', risk:6, party:'3rd', mechanism:'Pinterest Tag JS', persistence:'1 year', respawns: false },
+
+  // ── Snap ──
+  '_scid':      { source:'Snapchat', category:'advertising', purpose:'Snap Pixel client ID. Tracks conversions from Snapchat ads.', risk:8, party:'3rd', mechanism:'Snap Pixel JS', persistence:'13 months', respawns: true },
+
+  // ── Generic patterns ──
+  '__cf_bm':    { source:'Cloudflare', category:'necessary', purpose:'Cloudflare Bot Management. Distinguishes human visitors from bots. A rare example of a truly necessary third-party cookie.', risk:1, party:'3rd', mechanism:'Cloudflare edge', persistence:'30 minutes', respawns: false },
+  '__cfruid':   { source:'Cloudflare', category:'necessary', purpose:'Cloudflare rate limiting cookie. Identifies clients for abuse prevention.', risk:1, party:'3rd', mechanism:'Cloudflare edge', persistence:'session', respawns: false },
+  'JSESSIONID': { source:'Server', category:'necessary', purpose:'Java servlet session ID. Standard server-side session cookie with no tracking intent.', risk:1, party:'1st', mechanism:'server Set-Cookie', persistence:'session', respawns: false },
+  'PHPSESSID':  { source:'Server', category:'necessary', purpose:'PHP session ID. Standard server-side session cookie.', risk:1, party:'1st', mechanism:'server Set-Cookie', persistence:'session', respawns: false },
+  'csrftoken':  { source:'Server', category:'necessary', purpose:'Cross-Site Request Forgery protection token. A security cookie, not a tracking cookie.', risk:0, party:'1st', mechanism:'server Set-Cookie', persistence:'session/1 year', respawns: false },
+};
+
+// Pattern matchers for cookies that use dynamic suffixes
+const PATTERN_MATCHERS = [
+  { pattern: /^_ga_/, template: '_ga_*' },
+  { pattern: /^_gat_/, template: '_gat' },
+  { pattern: /^_dc_gtm_/, source:'Google', category:'analytics', purpose:'Google Tag Manager throttle cookie.', risk:3 },
+  { pattern: /^_hjSessionUser_/, source:'Hotjar', category:'analytics', purpose:'Hotjar session user ID. Tracks your behavior (clicks, scrolls, mouse movements) across visits.', risk:7 },
+  { pattern: /^_hjSession_/, source:'Hotjar', category:'analytics', purpose:'Hotjar current session data. Identifies a browsing session for heatmap/recording.', risk:6 },
+  { pattern: /^__utm/, source:'Google', category:'analytics', purpose:'Legacy Google Analytics UTM tracking cookie. Stores campaign data from URL parameters.', risk:5 },
+  { pattern: /^_pk_/, source:'Matomo', category:'analytics', purpose:'Matomo (Piwik) analytics tracker. Open-source GA alternative, usually self-hosted.', risk:4 },
+  { pattern: /^ajs_/, source:'Segment', category:'analytics', purpose:'Segment analytics.js tracking cookie. Routes your data to dozens of downstream tools.', risk:7 },
+];
+
+// ═══════════════════════════════════════════════════════════════════
+// SIMULATED COOKIE DATA (a realistic snapshot from a news site)
+// ═══════════════════════════════════════════════════════════════════
+const SIMULATED_COOKIES = [
+  // Meta cookies (the star of the show)
+  { name:'_fbp', value:'fb.1.1712988432109.1847205936', domain:'.currentsite.com', path:'/', expires:'2026-07-12T18:27:12Z', size:42, httpOnly:false, secure:true, sameSite:'None', priority:'Medium' },
+  { name:'_fbc', value:'fb.1.1712901200000.IwAR3xKz9...fbclid_abc123', domain:'.currentsite.com', path:'/', expires:'2026-07-12T12:00:00Z', size:68, httpOnly:false, secure:true, sameSite:'None', priority:'Medium' },
+  { name:'fr', value:'0aXQ2Rk8yOGVJNklPR3...Jlcm5ldC5jb20.AWW_k4xZkL2', domain:'.facebook.com', path:'/', expires:'2026-07-12T00:00:00Z', size:96, httpOnly:true, secure:true, sameSite:'None', priority:'Medium' },
+  { name:'datr', value:'dGhpcyBpcyBhIGZha2UgZGF0ciBjb29raWU', domain:'.facebook.com', path:'/', expires:'2028-04-12T00:00:00Z', size:48, httpOnly:true, secure:true, sameSite:'None', priority:'Medium' },
+
+  // Google
+  { name:'_ga', value:'GA1.2.1234567890.1712988432', domain:'.currentsite.com', path:'/', expires:'2028-04-12T18:27:12Z', size:36, httpOnly:false, secure:false, sameSite:'Lax', priority:'Medium' },
+  { name:'_ga_G8MXZB7XEH', value:'GS1.1.1712988432.1.1.1712988500.60.0.0', domain:'.currentsite.com', path:'/', expires:'2028-04-12T18:35:00Z', size:52, httpOnly:false, secure:false, sameSite:'Lax', priority:'Medium' },
+  { name:'_gid', value:'GA1.2.9876543210.1713074832', domain:'.currentsite.com', path:'/', expires:'2026-04-14T18:27:12Z', size:32, httpOnly:false, secure:false, sameSite:'Lax', priority:'Medium' },
+  { name:'_gcl_au', value:'1.1.1712988432.1712988432', domain:'.currentsite.com', path:'/', expires:'2026-07-12T18:27:12Z', size:30, httpOnly:false, secure:false, sameSite:'Lax', priority:'Medium' },
+  { name:'NID', value:'511=abc123XYZ...longEncodedValue', domain:'.google.com', path:'/', expires:'2026-10-12T00:00:00Z', size:178, httpOnly:true, secure:true, sameSite:'None', priority:'Medium' },
+  { name:'IDE', value:'AHWqTUnPQRSTUVWXYZ1234567890abc', domain:'.doubleclick.net', path:'/', expires:'2027-05-12T00:00:00Z', size:40, httpOnly:true, secure:true, sameSite:'None', priority:'High' },
+
+  // LinkedIn
+  { name:'li_sugr', value:'9a6b5c4d-3e2f-1a0b-c9d8-e7f6a5b4c3d2', domain:'.linkedin.com', path:'/', expires:'2026-07-12T00:00:00Z', size:44, httpOnly:false, secure:true, sameSite:'None', priority:'Medium' },
+  { name:'bcookie', value:'"v=2&abcdef12-3456-7890-abcd-ef1234567890"', domain:'.linkedin.com', path:'/', expires:'2027-04-12T00:00:00Z', size:54, httpOnly:false, secure:true, sameSite:'None', priority:'Medium' },
+  { name:'UserMatchHistory', value:'AQJ2PTEyMzQ1Njc4OTA', domain:'.linkedin.com', path:'/', expires:'2026-05-12T00:00:00Z', size:28, httpOnly:false, secure:true, sameSite:'None', priority:'Medium' },
+
+  // TikTok
+  { name:'_ttp', value:'2Fy7gRk8yOGVJNklPR3h5Q0lYVkpGbU5x', domain:'.currentsite.com', path:'/', expires:'2027-05-12T00:00:00Z', size:40, httpOnly:false, secure:true, sameSite:'None', priority:'Medium' },
+
+  // Snapchat
+  { name:'_scid', value:'1d2e3f4a-5b6c-7d8e-9f0a-1b2c3d4e5f6a', domain:'.currentsite.com', path:'/', expires:'2027-05-12T00:00:00Z', size:44, httpOnly:false, secure:true, sameSite:'None', priority:'Medium' },
+
+  // Hotjar
+  { name:'_hjSessionUser_1234567', value:'eyJpZCI6IjEyMzQ1Njc4LTkwYWItY2RlZi0xMjM0LTU2Nzg5MGFiY2RlZiIsImNyZWF0ZWQiOjE3MTI5ODg0MzIxMDksImV4aXN0aW5nIjpmYWxzZX0=', domain:'.currentsite.com', path:'/', expires:'2027-04-12T18:27:12Z', size:128, httpOnly:false, secure:false, sameSite:'Lax', priority:'Medium' },
+
+  // Cloudflare
+  { name:'__cf_bm', value:'oZ4bGLOHkRqKxM_vFE.W2XsOK0yMJOHxfCzN9LDpY-1712988432-1.0.1.1-abc123XYZ', domain:'.currentsite.com', path:'/', expires:'2026-04-13T18:57:12Z', size:72, httpOnly:true, secure:true, sameSite:'None', priority:'Medium' },
+
+  // Server session
+  { name:'_session_id', value:'a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6', domain:'currentsite.com', path:'/', expires:null, size:32, httpOnly:true, secure:true, sameSite:'Strict', priority:'Medium' },
+
+  // CSRF
+  { name:'csrftoken', value:'Wf9z2xK4vN8mQ3pR7yT1uH6jL0oI5sA', domain:'currentsite.com', path:'/', expires:'2027-04-12T18:27:12Z', size:32, httpOnly:false, secure:true, sameSite:'Lax', priority:'Medium' },
+
+  // Segment
+  { name:'ajs_anonymous_id', value:'"f47ac10b-58cc-4372-a567-0e02b2c3d479"', domain:'.currentsite.com', path:'/', expires:'2027-04-12T18:27:12Z', size:44, httpOnly:false, secure:false, sameSite:'Lax', priority:'Medium' },
+
+  // Pinterest
+  { name:'_pinterest_ct_ua', value:'dGhpcyBpcyBhIHBpbnRlcmVzdCBjb29raWU=', domain:'.currentsite.com', path:'/', expires:'2027-04-12T00:00:00Z', size:44, httpOnly:false, secure:true, sameSite:'None', priority:'Medium' },
+
+  // Microsoft
+  { name:'_uetsid', value:'abcdef12|34567890|4|0|ads.bing.com', domain:'.currentsite.com', path:'/', expires:null, size:48, httpOnly:false, secure:false, sameSite:'Lax', priority:'Medium' },
+
+  // Consent cookie
+  { name:'CookieConsent', value:'{"stamp":"abc","necessary":true,"preferences":false,"statistics":true,"marketing":true}', domain:'currentsite.com', path:'/', expires:'2027-04-12T00:00:00Z', size:96, httpOnly:false, secure:true, sameSite:'Lax', priority:'Medium' },
+];
+
+// ═══════════════════════════════════════════════════════════════════
+// ENRICHMENT ENGINE - classify every cookie across all dimensions
+// ═══════════════════════════════════════════════════════════════════
+function enrichCookie(c) {
+  const e = { ...c };
+  // Look up in knowledge base
+  let kb = KNOWN_COOKIES[c.name];
+  if (!kb) {
+    for (const pm of PATTERN_MATCHERS) {
+      if (pm.pattern.test(c.name)) {
+        kb = pm.template ? KNOWN_COOKIES[pm.template] : pm;
+        break;
+      }
+    }
+  }
+
+  if (kb) {
+    e.source = kb.source || 'Unknown';
+    e.category = kb.category || 'unknown';
+    e.purpose = kb.purpose || '';
+    e.risk = kb.risk ?? 5;
+    e.party = kb.party || (c.domain.startsWith('.') && !c.domain.includes('currentsite') ? '3rd' : '1st');
+    e.mechanism = kb.mechanism || 'unknown';
+    e.persistenceNote = kb.persistence || '';
+    e.respawns = kb.respawns || false;
+  } else {
+    // Heuristic classification
+    e.source = guessSource(c);
+    e.category = guessCategory(c);
+    e.purpose = 'Unknown cookie - not in the fingerprint database.';
+    e.risk = guessRisk(c);
+    e.party = c.domain.includes('currentsite') ? '1st' : '3rd';
+    e.mechanism = c.httpOnly ? 'server Set-Cookie' : 'JavaScript';
+    e.persistenceNote = '';
+    e.respawns = false;
+  }
+
+  // Time dimension
+  if (c.expires) {
+    const exp = new Date(c.expires);
+    const now = new Date();
+    e.ttlMs = exp - now;
+    e.ttlDays = Math.round(e.ttlMs / (1000*60*60*24));
+    e.timeClass = e.ttlDays <= 1 ? 'ephemeral' : e.ttlDays <= 30 ? 'short' : e.ttlDays <= 365 ? 'medium' : 'long';
+    e.isSession = false;
+  } else {
+    e.ttlMs = 0;
+    e.ttlDays = 0;
+    e.timeClass = 'session';
+    e.isSession = true;
+  }
+
+  // Structure dimension
+  e.encoding = detectEncoding(c.value);
+  e.namePattern = detectNamePattern(c.name);
+
+  return e;
+}
+
+function guessSource(c) {
+  const d = c.domain.toLowerCase();
+  if (d.includes('facebook') || d.includes('fbcdn')) return 'Meta';
+  if (d.includes('google') || d.includes('doubleclick') || d.includes('youtube')) return 'Google';
+  if (d.includes('amazon') || d.includes('amazonaws')) return 'Amazon';
+  if (d.includes('linkedin')) return 'LinkedIn';
+  if (d.includes('tiktok')) return 'TikTok';
+  if (d.includes('cloudflare')) return 'Cloudflare';
+  return 'Site';
+}
+
+function guessCategory(c) {
+  const n = c.name.toLowerCase();
+  if (n.includes('session') || n.includes('csrf') || n.includes('token')) return 'necessary';
+  if (n.includes('consent') || n.includes('cookie')) return 'necessary';
+  if (n.includes('_ga') || n.includes('_gid') || n.includes('hj') || n.includes('_pk')) return 'analytics';
+  if (n.includes('_fb') || n.includes('_gcl') || n.includes('ad') || n.includes('_tt')) return 'advertising';
+  return 'functional';
+}
+
+function guessRisk(c) {
+  let r = 3;
+  if (c.domain.includes('currentsite')) r -= 1; else r += 2;
+  if (!c.httpOnly) r += 1;
+  if (c.sameSite === 'None') r += 1;
+  if (c.size > 100) r += 1;
+  if (c.expires && new Date(c.expires) - new Date() > 365*24*60*60*1000) r += 1;
+  return Math.min(10, Math.max(0, r));
+}
+
+function detectEncoding(val) {
+  if (!val) return 'empty';
+  if (val.startsWith('{') || val.startsWith('[')) return 'JSON';
+  if (/^[A-Za-z0-9+/=]{20,}$/.test(val) && val.length % 4 === 0) return 'Base64';
+  if (/^[0-9a-f]{32,}$/i.test(val)) return 'Hex';
+  if (/^eyJ/.test(val)) return 'JWT/Base64';
+  if (/^\d+\.\d+\.\d+/.test(val)) return 'Dotted ID';
+  if (/^[0-9a-f]{8}-/.test(val)) return 'UUID';
+  if (/^".*"$/.test(val)) return 'Quoted string';
+  if (/^\d+$/.test(val)) return 'Numeric';
+  if (val.includes('|')) return 'Pipe-delimited';
+  return 'Opaque';
+}
+
+function detectNamePattern(name) {
+  if (name.startsWith('_fb') || name.startsWith('_fbc')) return 'Meta prefix (_fb*)';
+  if (name.startsWith('_ga') || name.startsWith('_gid') || name.startsWith('_gcl')) return 'Google prefix (_g*)';
+  if (name.startsWith('__')) return 'Double-underscore (server/infra)';
+  if (name.startsWith('_')) return 'Single-underscore (tracker convention)';
+  if (name.startsWith('ajs_')) return 'Segment prefix (ajs_*)';
+  if (name.startsWith('_hj')) return 'Hotjar prefix (_hj*)';
+  if (name.startsWith('_pk')) return 'Matomo prefix (_pk*)';
+  if (name.startsWith('_pin')) return 'Pinterest prefix (_pin*)';
+  if (name.startsWith('li_')) return 'LinkedIn prefix (li_*)';
+  return 'Custom';
+}
+
+function tryDecode(val) {
+  // Try base64
+  try {
+    if (/^[A-Za-z0-9+/=]{16,}$/.test(val) || /^eyJ/.test(val)) {
+      const decoded = atob(val.replace(/-/g,'+').replace(/_/g,'/'));
+      if (/^[\x20-\x7E\n\r\t]+$/.test(decoded)) return { type: 'Base64', decoded };
+    }
+  } catch(e) {}
+  // Try JSON parse
+  try {
+    const clean = val.replace(/^"|"$/g, '');
+    const parsed = JSON.parse(clean);
+    if (typeof parsed === 'object') return { type: 'JSON', decoded: JSON.stringify(parsed, null, 2) };
+  } catch(e) {}
+  // Try URL decode
+  try {
+    const decoded = decodeURIComponent(val);
+    if (decoded !== val) return { type: 'URL-encoded', decoded };
+  } catch(e) {}
+  return null;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// APP STATE
+// ═══════════════════════════════════════════════════════════════════
+let cookies = SIMULATED_COOKIES.map(enrichCookie);
+let activeDim = 'all';
+let activeCookie = null;
+let searchQuery = '';
+
+// ═══════════════════════════════════════════════════════════════════
+// RENDER ENGINE
+// ═══════════════════════════════════════════════════════════════════
+function renderStats() {
+  const bar = document.getElementById('statsBar');
+  const metaCount = cookies.filter(c => c.source === 'Meta').length;
+  const googleCount = cookies.filter(c => c.source === 'Google').length;
+  const thirdParty = cookies.filter(c => c.party === '3rd').length;
+  const trackers = cookies.filter(c => c.category === 'advertising').length;
+  const httpOnlyCount = cookies.filter(c => c.httpOnly).length;
+  const avgRisk = (cookies.reduce((s,c) => s + c.risk, 0) / cookies.length).toFixed(1);
+  const totalBytes = cookies.reduce((s,c) => s + c.size, 0);
+
+  bar.innerHTML = `
+    <div class="stat-item"><span class="stat-num" style="color:var(--meta-blue)">${metaCount}</span><span class="stat-label">Meta</span></div>
+    <div class="stat-item"><span class="stat-num" style="color:var(--google-red)">${googleCount}</span><span class="stat-label">Google</span></div>
+    <div class="stat-item"><span class="stat-num" style="color:var(--danger)">${thirdParty}</span><span class="stat-label">Third-party</span></div>
+    <div class="stat-item"><span class="stat-num" style="color:var(--warn)">${trackers}</span><span class="stat-label">Ad trackers</span></div>
+    <div class="stat-item"><span class="stat-num" style="color:var(--pink)">${httpOnlyCount}</span><span class="stat-label">HttpOnly</span></div>
+    <div class="stat-item"><span class="stat-num" style="color:var(--purple)">${avgRisk}</span><span class="stat-label">Avg risk</span></div>
+    <div class="stat-item"><span class="stat-num" style="color:var(--cyan)">${totalBytes}</span><span class="stat-label">Total bytes</span></div>
+  `;
+}
+
+function renderTabs() {
+  document.getElementById('count-all').textContent = cookies.length;
+  document.getElementById('count-perception').textContent = cookies.filter(c => !c.httpOnly || c.sameSite === 'None').length;
+  document.getElementById('count-structure').textContent = cookies.length;
+  document.getElementById('count-source').textContent = new Set(cookies.map(c => c.source)).size + ' sources';
+  document.getElementById('count-time').textContent = cookies.filter(c => !c.isSession).length + ' persistent';
+}
+
+function getFilteredCookies() {
+  let list = [...cookies];
+  if (searchQuery) {
+    const q = searchQuery.toLowerCase();
+    list = list.filter(c => c.name.toLowerCase().includes(q) || c.domain.toLowerCase().includes(q) || c.source.toLowerCase().includes(q));
+  }
+  // Sort: Meta first, then by risk desc
+  list.sort((a,b) => {
+    if (a.source === 'Meta' && b.source !== 'Meta') return -1;
+    if (b.source === 'Meta' && a.source !== 'Meta') return 1;
+    return b.risk - a.risk;
+  });
+  return list;
+}
+
+function getBadgeClass(c) {
+  const src = c.source.toLowerCase();
+  if (src === 'meta') return 'badge-meta';
+  if (src === 'google') return 'badge-google';
+  if (src === 'amazon') return 'badge-amazon';
+  return '';
+}
+
+function getCategoryBadge(cat) {
+  const map = { advertising:'badge-tracker', analytics:'badge-analytics', functional:'badge-functional', necessary:'badge-necessary', authentication:'badge-necessary' };
+  return map[cat] || '';
+}
+
+function renderCookieList() {
+  const list = document.getElementById('cookieList');
+  const filtered = getFilteredCookies();
+  document.getElementById('totalCount').textContent = filtered.length;
+
+  list.innerHTML = filtered.map(c => {
+    const isMeta = c.source === 'Meta';
+    const isActive = activeCookie && activeCookie.name === c.name && activeCookie.domain === c.domain;
+    return `
+      <div class="cookie-item ${isMeta ? 'meta-highlight' : ''} ${isActive ? 'active' : ''}"
+           onclick="selectCookie('${c.name}','${c.domain}')">
+        <div class="cookie-name">
+          ${isMeta ? '<span style="color:var(--meta-blue)">&#9632;</span>' : ''}
+          ${esc(c.name)}
+        </div>
+        <div class="cookie-domain">${esc(c.domain)}</div>
+        <div class="cookie-badges">
+          <span class="badge ${getBadgeClass(c)}">${esc(c.source)}</span>
+          <span class="badge ${getCategoryBadge(c.category)}">${esc(c.category)}</span>
+          <span class="badge ${c.party === '3rd' ? 'badge-3p' : 'badge-1p'}">${c.party}</span>
+          ${c.isSession ? '<span class="badge badge-session">session</span>' : '<span class="badge badge-persistent">' + c.ttlDays + 'd</span>'}
+          ${c.httpOnly ? '<span class="badge badge-httponly">httponly</span>' : ''}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function selectCookie(name, domain) {
+  activeCookie = cookies.find(c => c.name === name && c.domain === domain);
+  renderCookieList();
+  renderDetail();
+}
+
+function renderDetail() {
+  const panel = document.getElementById('detailContent');
+  if (!activeCookie) {
+    renderDimensionOverview();
+    return;
+  }
+  const c = activeCookie;
+  const isMeta = c.source === 'Meta';
+  const sourceIconClass = isMeta ? 'meta' : c.source === 'Google' ? 'google' : c.source === 'Amazon' ? 'amazon' : 'other';
+  const sourceEmoji = isMeta ? 'f' : c.source === 'Google' ? 'G' : c.source === 'Amazon' ? 'a' : c.source === 'LinkedIn' ? 'in' : c.source === 'TikTok' ? 'T' : '#';
+  const decoded = tryDecode(c.value);
+
+  const riskColor = c.risk >= 7 ? 'var(--danger)' : c.risk >= 4 ? 'var(--warn)' : 'var(--safe)';
+  const riskClass = c.risk >= 7 ? 'score-high' : c.risk >= 4 ? 'score-med' : 'score-low';
+  const riskLabel = c.risk >= 8 ? 'Critical privacy risk' : c.risk >= 6 ? 'Significant tracking' : c.risk >= 4 ? 'Moderate concern' : c.risk >= 2 ? 'Low risk' : 'Privacy-safe';
+
+  // Time bar
+  const maxDays = 730;
+  const barPct = c.isSession ? 3 : Math.min(100, (c.ttlDays / maxDays) * 100);
+  const timeColor = c.isSession ? 'var(--cyan)' : c.ttlDays > 365 ? 'var(--danger)' : c.ttlDays > 90 ? 'var(--warn)' : 'var(--safe)';
+
+  panel.innerHTML = `
+    <div class="detail-panel">
+      <!-- Header -->
+      <div class="detail-header">
+        <div class="source-icon ${sourceIconClass}">
+          <span style="font-family:var(--font);font-weight:800;font-size:1rem;${isMeta ? 'color:var(--meta-blue)' : ''}">${sourceEmoji}</span>
+        </div>
+        <div>
+          <h2 style="${isMeta ? 'color:var(--meta-blue)' : ''}">${esc(c.name)}</h2>
+          <div class="domain-label">${esc(c.domain)} ${c.party === '3rd' ? '(third-party)' : '(first-party)'}</div>
+        </div>
+      </div>
+
+      <!-- Privacy Risk Score -->
+      <div class="privacy-score">
+        <div class="score-ring ${riskClass}">${c.risk}/10</div>
+        <div>
+          <div style="font-weight:600;font-size:.95rem;color:${riskColor}">${riskLabel}</div>
+          <div style="color:var(--text-dim);font-size:.8rem;margin-top:.2rem">${esc(c.purpose)}</div>
+        </div>
+      </div>
+
+      <!-- ============ PERCEPTION ============ -->
+      <div class="section-title">&#x1f441; Perception - What can see this cookie?</div>
+      <div class="perception-layers" style="margin-bottom:1.5rem">
+        <div class="perc-layer">
+          <span class="perc-icon">&#x1f4dc;</span>
+          <span class="perc-label"><strong>JavaScript (document.cookie)</strong><br><span style="color:var(--text-dim);font-size:.75rem">${c.httpOnly ? 'Cookie is invisible to page scripts - server-only access' : 'Any script on the page can read and exfiltrate this value'}</span></span>
+          <span class="perc-status ${c.httpOnly ? 'perc-hidden' : 'perc-visible'}">${c.httpOnly ? 'HIDDEN' : 'EXPOSED'}</span>
+        </div>
+        <div class="perc-layer">
+          <span class="perc-icon">&#x1f6e1;</span>
+          <span class="perc-label"><strong>Cross-site requests (SameSite)</strong><br><span style="color:var(--text-dim);font-size:.75rem">${
+            c.sameSite === 'None' ? 'Sent on ALL cross-site requests - full third-party tracking capability' :
+            c.sameSite === 'Lax' ? 'Sent on top-level navigations only - limited cross-site leakage' :
+            'Never sent cross-site - strong isolation'
+          }</span></span>
+          <span class="perc-status ${c.sameSite === 'None' ? 'perc-visible' : 'perc-hidden'}">${c.sameSite}</span>
+        </div>
+        <div class="perc-layer">
+          <span class="perc-icon">&#x1f512;</span>
+          <span class="perc-label"><strong>Network visibility (Secure flag)</strong><br><span style="color:var(--text-dim);font-size:.75rem">${c.secure ? 'HTTPS only - encrypted in transit, invisible to network sniffers' : 'Sent over HTTP too - visible to anyone on your WiFi'}</span></span>
+          <span class="perc-status ${c.secure ? 'perc-hidden' : 'perc-visible'}">${c.secure ? 'ENCRYPTED' : 'CLEARTEXT'}</span>
+        </div>
+        <div class="perc-layer">
+          <span class="perc-icon">&#x1f50d;</span>
+          <span class="perc-label"><strong>DevTools visibility</strong><br><span style="color:var(--text-dim);font-size:.75rem">Always visible in Application > Cookies. This is where you found it.</span></span>
+          <span class="perc-status perc-visible">VISIBLE</span>
+        </div>
+        <div class="perc-layer">
+          <span class="perc-icon">&#x1f465;</span>
+          <span class="perc-label"><strong>User perception</strong><br><span style="color:var(--text-dim);font-size:.75rem">${
+            c.category === 'advertising' ? 'User has no idea this exists unless they check DevTools. Planted silently by a tracking pixel.' :
+            c.category === 'analytics' ? 'Invisible to the user. Set by an analytics script they probably did not consciously agree to.' :
+            c.category === 'necessary' ? 'User would not notice if this disappeared, but the site might break.' :
+            'Operates below the user awareness threshold.'
+          }</span></span>
+          <span class="perc-status perc-visible">INVISIBLE</span>
+        </div>
+      </div>
+
+      <!-- ============ STRUCTURE ============ -->
+      <div class="section-title">&#x1f9ec; Structure - Anatomy of the cookie</div>
+      <div class="anatomy">
+        <h3>Cookie Attributes</h3>
+        <div class="anatomy-row">
+          <span class="anatomy-label">Name</span>
+          <span class="anatomy-val" style="color:var(--accent)">${esc(c.name)}</span>
+          <div class="anatomy-indicator ind-blue"></div>
+        </div>
+        <div class="anatomy-row">
+          <span class="anatomy-label">Name Pattern</span>
+          <span class="anatomy-val">${esc(c.namePattern)}</span>
+        </div>
+        <div class="anatomy-row">
+          <span class="anatomy-label">Domain</span>
+          <span class="anatomy-val">${esc(c.domain)}</span>
+          <div class="anatomy-indicator ${c.domain.startsWith('.') ? 'ind-yellow' : 'ind-green'}"></div>
+        </div>
+        <div class="anatomy-row">
+          <span class="anatomy-label">Domain Scope</span>
+          <span class="anatomy-val" style="color:var(--text-dim);font-size:.75rem">${c.domain.startsWith('.') ? 'Leading dot = sent to ALL subdomains (wider scope, more exposure)' : 'Exact domain only (tight scope)'}</span>
+        </div>
+        <div class="anatomy-row">
+          <span class="anatomy-label">Path</span>
+          <span class="anatomy-val">${esc(c.path)}</span>
+          <div class="anatomy-indicator ${c.path === '/' ? 'ind-yellow' : 'ind-green'}"></div>
+        </div>
+        <div class="anatomy-row">
+          <span class="anatomy-label">Size</span>
+          <span class="anatomy-val">${c.size} bytes</span>
+        </div>
+        <div class="anatomy-row">
+          <span class="anatomy-label">Encoding</span>
+          <span class="anatomy-val" style="color:var(--cyan)">${esc(c.encoding)}</span>
+        </div>
+        <div class="anatomy-row">
+          <span class="anatomy-label">HttpOnly</span>
+          <span class="anatomy-val">${c.httpOnly ? '<span style="color:var(--safe)">Yes</span>' : '<span style="color:var(--danger)">No</span>'}</span>
+          <div class="anatomy-indicator ${c.httpOnly ? 'ind-green' : 'ind-red'}"></div>
+        </div>
+        <div class="anatomy-row">
+          <span class="anatomy-label">Secure</span>
+          <span class="anatomy-val">${c.secure ? '<span style="color:var(--safe)">Yes</span>' : '<span style="color:var(--danger)">No</span>'}</span>
+          <div class="anatomy-indicator ${c.secure ? 'ind-green' : 'ind-red'}"></div>
+        </div>
+        <div class="anatomy-row">
+          <span class="anatomy-label">SameSite</span>
+          <span class="anatomy-val">${esc(c.sameSite)}</span>
+          <div class="anatomy-indicator ${c.sameSite === 'Strict' ? 'ind-green' : c.sameSite === 'Lax' ? 'ind-yellow' : 'ind-red'}"></div>
+        </div>
+        <div class="anatomy-row">
+          <span class="anatomy-label">Priority</span>
+          <span class="anatomy-val">${esc(c.priority)}</span>
+        </div>
+      </div>
+
+      <div class="raw-block">
+        <h4>Raw Value</h4>
+        <div class="raw-value">${esc(c.value)}</div>
+      </div>
+      ${decoded ? `
+      <div class="raw-block">
+        <h4>Decoded (${esc(decoded.type)})</h4>
+        <div class="raw-value decoded-value">${esc(decoded.decoded)}</div>
+      </div>
+      ` : ''}
+
+      <!-- ============ SOURCE ============ -->
+      <div class="section-title">&#x1f4e1; Source - Where did this come from?</div>
+      <div class="dim-grid">
+        <div class="dim-card">
+          <h4>&#x1f3ed; Origin Company</h4>
+          <div class="value" style="color:${isMeta ? 'var(--meta-blue)' : c.source === 'Google' ? 'var(--google-red)' : 'var(--text)'}">${esc(c.source)}</div>
+          <div class="sub">${c.party === '3rd' ? 'Third-party: set by a domain you did NOT visit' : 'First-party: set by the site you are on'}</div>
+        </div>
+        <div class="dim-card">
+          <h4>&#x2699; Delivery Mechanism</h4>
+          <div class="value">${esc(c.mechanism)}</div>
+          <div class="sub">${c.httpOnly ? 'Server-side Set-Cookie header' : 'Client-side JavaScript document.cookie write'}</div>
+        </div>
+        <div class="dim-card">
+          <h4>&#x1f3af; Purpose Category</h4>
+          <div class="value">${esc(c.category)}</div>
+          <div class="sub">${
+            c.category === 'advertising' ? 'Used for ad targeting, retargeting, and conversion attribution' :
+            c.category === 'analytics' ? 'Collects usage statistics and behavioral data' :
+            c.category === 'functional' ? 'Enables site features but may also fingerprint' :
+            c.category === 'necessary' ? 'Required for basic site functionality or security' :
+            c.category === 'authentication' ? 'Session and login management' : ''
+          }</div>
+        </div>
+        <div class="dim-card">
+          <h4>&#x1f6a8; Party Classification</h4>
+          <div class="value" style="color:${c.party === '3rd' ? 'var(--danger)' : 'var(--safe)'}">${c.party}-party</div>
+          <div class="sub">${c.party === '3rd' ? 'Cross-site tracking capability. Browsers are actively blocking these.' : 'Scoped to the current site. Harder to use for cross-site tracking.'}</div>
+        </div>
+      </div>
+
+      ${isMeta || c.source === 'Google' ? `
+      <div class="flow-diagram">
+        <h3>&#x1f504; ${esc(c.source)} Tracking Flow for <code style="color:var(--accent)">${esc(c.name)}</code></h3>
+        <div class="flow-steps">
+          <div class="flow-step ${c.mechanism.includes('pixel') || c.mechanism.includes('JS') ? 'highlighted' : ''}">
+            <strong>1. Plant</strong>
+            ${c.mechanism.includes('pixel') ? 'Pixel JS loads' : c.mechanism.includes('JS') ? 'SDK script runs' : 'Server sets cookie'}
+          </div>
+          <div class="flow-arrow">&#x27a1;</div>
+          <div class="flow-step highlighted">
+            <strong>2. Assign ID</strong>
+            Cookie written with unique browser fingerprint
+          </div>
+          <div class="flow-arrow">&#x27a1;</div>
+          <div class="flow-step">
+            <strong>3. Beacon</strong>
+            Every page action sends ID + context to ${esc(c.source)}
+          </div>
+          <div class="flow-arrow">&#x27a1;</div>
+          <div class="flow-step">
+            <strong>4. Stitch</strong>
+            ${esc(c.source)} links ID across all sites running their pixel
+          </div>
+          <div class="flow-arrow">&#x27a1;</div>
+          <div class="flow-step" style="border-color:var(--danger)">
+            <strong>5. Profile</strong>
+            Cross-site browsing history feeds ad auction
+          </div>
+        </div>
+      </div>
+      ` : ''}
+
+      <!-- ============ TIME ============ -->
+      <div class="section-title">&#x23f3; Time Continuity - How long does it persist?</div>
+      <div class="dim-grid">
+        <div class="dim-card">
+          <h4>&#x1f4c5; Expiration</h4>
+          <div class="value" style="color:${timeColor}">${c.isSession ? 'Session' : c.expires ? new Date(c.expires).toLocaleDateString('en-US', {year:'numeric',month:'short',day:'numeric'}) : 'Unknown'}</div>
+          <div class="sub">${c.isSession ? 'Deleted when you close the browser tab' : c.ttlDays + ' days from now'}</div>
+        </div>
+        <div class="dim-card">
+          <h4>&#x1f3f7; Time Class</h4>
+          <div class="value">${c.timeClass}</div>
+          <div class="sub">${
+            c.timeClass === 'session' ? 'Ephemeral - gone when the tab closes' :
+            c.timeClass === 'ephemeral' ? 'Under 24 hours - very short-lived' :
+            c.timeClass === 'short' ? '1-30 days - moderate persistence' :
+            c.timeClass === 'medium' ? '1-12 months - long-lived tracker' :
+            '1+ years - maximum persistence, outlives most user attention'
+          }</div>
+        </div>
+        <div class="dim-card">
+          <h4>&#x1f501; Respawning</h4>
+          <div class="value" style="color:${c.respawns ? 'var(--danger)' : 'var(--safe)'}">${c.respawns ? 'Yes' : 'No'}</div>
+          <div class="sub">${c.respawns ? 'This cookie regenerates itself. Delete it and the tracking script will recreate it on next page load with the same or linked ID. This is zombie cookie behavior.' : 'Does not automatically regenerate after deletion.'}</div>
+        </div>
+        ${c.persistenceNote ? `
+        <div class="dim-card">
+          <h4>&#x1f4d6; Known Persistence</h4>
+          <div class="value" style="font-size:.85rem">${esc(c.persistenceNote)}</div>
+          <div class="sub">Documented by tracker research databases</div>
+        </div>
+        ` : ''}
+      </div>
+
+      <div style="margin-bottom:2rem">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.3rem">
+          <span style="font-size:.75rem;color:var(--text-dim)">Lifetime relative to 2-year max</span>
+          <span style="font-family:var(--font);font-size:.75rem;color:${timeColor}">${c.isSession ? 'session' : c.ttlDays + ' days'}</span>
+        </div>
+        <div class="timeline-bar">
+          <div class="timeline-fill" style="width:${barPct}%;background:${timeColor}">${c.isSession ? 'session' : c.ttlDays + 'd'}</div>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:.6rem;color:var(--text-dim);margin-top:.2rem">
+          <span>now</span><span>30d</span><span>90d</span><span>1yr</span><span>2yr</span>
+        </div>
+      </div>
+
+      <!-- Fingerprint breakdown -->
+      <div class="section-title">&#x1f5c3; Fingerprint Breakdown</div>
+      <div class="fingerprint-grid" style="margin-bottom:2rem">
+        <div class="fp-cell"><div class="fp-label">Name</div><div class="fp-val" style="color:var(--accent)">${esc(c.name)}</div></div>
+        <div class="fp-cell"><div class="fp-label">Encoding</div><div class="fp-val" style="color:var(--cyan)">${esc(c.encoding)}</div></div>
+        <div class="fp-cell"><div class="fp-label">Size</div><div class="fp-val">${c.size}B</div></div>
+        <div class="fp-cell"><div class="fp-label">Party</div><div class="fp-val" style="color:${c.party==='3rd' ? 'var(--danger)' : 'var(--safe)'}">${c.party}</div></div>
+        <div class="fp-cell"><div class="fp-label">HttpOnly</div><div class="fp-val" style="color:${c.httpOnly ? 'var(--safe)' : 'var(--danger)'}">${c.httpOnly}</div></div>
+        <div class="fp-cell"><div class="fp-label">Secure</div><div class="fp-val" style="color:${c.secure ? 'var(--safe)' : 'var(--danger)'}">${c.secure}</div></div>
+        <div class="fp-cell"><div class="fp-label">SameSite</div><div class="fp-val">${esc(c.sameSite)}</div></div>
+        <div class="fp-cell"><div class="fp-label">Risk</div><div class="fp-val" style="color:${riskColor}">${c.risk}/10</div></div>
+        <div class="fp-cell"><div class="fp-label">TTL</div><div class="fp-val" style="color:${timeColor}">${c.isSession ? 'session' : c.ttlDays + 'd'}</div></div>
+        <div class="fp-cell"><div class="fp-label">Respawns</div><div class="fp-val" style="color:${c.respawns ? 'var(--danger)' : 'var(--safe)'}">${c.respawns}</div></div>
+        <div class="fp-cell"><div class="fp-label">Source</div><div class="fp-val">${esc(c.source)}</div></div>
+        <div class="fp-cell"><div class="fp-label">Mechanism</div><div class="fp-val" style="font-size:.55rem">${esc(c.mechanism)}</div></div>
+      </div>
+    </div>
+  `;
+}
+
+function renderDimensionOverview() {
+  const panel = document.getElementById('detailContent');
+  if (activeDim === 'all' || activeDim === 'source') {
+    renderSourceOverview(panel);
+  } else if (activeDim === 'perception') {
+    renderPerceptionOverview(panel);
+  } else if (activeDim === 'structure') {
+    renderStructureOverview(panel);
+  } else if (activeDim === 'time') {
+    renderTimeOverview(panel);
+  }
+}
+
+function renderSourceOverview(panel) {
+  const bySource = {};
+  cookies.forEach(c => { bySource[c.source] = (bySource[c.source]||0)+1; });
+  const byCategory = {};
+  cookies.forEach(c => { byCategory[c.category] = (byCategory[c.category]||0)+1; });
+  const byParty = { '1st':0, '3rd':0 };
+  cookies.forEach(c => byParty[c.party]++);
+
+  const maxS = Math.max(...Object.values(bySource));
+  const sourceColors = { Meta:'var(--meta-blue)', Google:'var(--google-red)', Amazon:'var(--amazon-orange)', LinkedIn:'var(--info)', TikTok:'var(--pink)', Cloudflare:'var(--cyan)', Snapchat:'var(--warn)', Pinterest:'var(--danger)', Hotjar:'var(--purple)', Segment:'var(--safe)', Microsoft:'var(--info)', Server:'var(--text-dim)', Site:'var(--text-dim)' };
+
+  panel.innerHTML = `
+    <div class="detail-panel">
+      <div class="section-title">&#x1f4e1; Source Dimension Overview</div>
+      <p style="color:var(--text-dim);margin-bottom:1.5rem;font-size:.85rem">Who planted cookies on this page and why. Click any cookie in the sidebar to drill down.</p>
+
+      <div class="overview-grid">
+        <div class="overview-card">
+          <div class="big-num" style="color:var(--danger)">${byParty['3rd']}</div>
+          <div class="card-label">Third-party cookies</div>
+        </div>
+        <div class="overview-card">
+          <div class="big-num" style="color:var(--safe)">${byParty['1st']}</div>
+          <div class="card-label">First-party cookies</div>
+        </div>
+        <div class="overview-card">
+          <div class="big-num" style="color:var(--meta-blue)">${bySource['Meta']||0}</div>
+          <div class="card-label">Meta trackers</div>
+        </div>
+        <div class="overview-card">
+          <div class="big-num" style="color:var(--warn)">${byCategory['advertising']||0}</div>
+          <div class="card-label">Ad cookies</div>
+        </div>
+      </div>
+
+      <h3 style="font-size:.9rem;margin-bottom:.8rem">Cookies by Source</h3>
+      <div class="bar-chart">
+        ${Object.entries(bySource).sort((a,b)=>b[1]-a[1]).map(([src, cnt]) => `
+          <div class="bar-row">
+            <span class="bar-label">${esc(src)}</span>
+            <div class="bar-track">
+              <div class="bar-fill" style="width:${(cnt/maxS)*100}%;background:${sourceColors[src]||'var(--accent)'}">${cnt}</div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+
+      <h3 style="font-size:.9rem;margin:1.5rem 0 .8rem">Cookies by Purpose</h3>
+      <div class="bar-chart">
+        ${Object.entries(byCategory).sort((a,b)=>b[1]-a[1]).map(([cat, cnt]) => {
+          const colors = { advertising:'var(--danger)', analytics:'var(--purple)', functional:'var(--warn)', necessary:'var(--safe)', authentication:'var(--info)' };
+          return `
+          <div class="bar-row">
+            <span class="bar-label">${esc(cat)}</span>
+            <div class="bar-track">
+              <div class="bar-fill" style="width:${(cnt/cookies.length)*100}%;background:${colors[cat]||'var(--accent)'}">${cnt}</div>
+            </div>
+          </div>
+        `}).join('')}
+      </div>
+
+      <div class="flow-diagram" style="margin-top:1.5rem">
+        <h3>&#x1f534; Meta's Cross-Site Tracking Architecture</h3>
+        <p style="color:var(--text-dim);font-size:.8rem;margin-bottom:1rem">How Meta builds a profile of you across the entire web using cookies found on this page:</p>
+        <div class="flow-steps">
+          <div class="flow-step highlighted"><strong>_fbp</strong>Browser ID planted by Meta Pixel on 10M+ sites</div>
+          <div class="flow-arrow">+</div>
+          <div class="flow-step highlighted"><strong>_fbc</strong>Click ID links your ad click to this visit</div>
+          <div class="flow-arrow">+</div>
+          <div class="flow-step highlighted"><strong>fr</strong>Encrypted retargeting token on facebook.com</div>
+          <div class="flow-arrow">&#x27a1;</div>
+          <div class="flow-step" style="border-color:var(--danger);min-width:180px"><strong>Ad Auction</strong>Your cross-site profile determines which ads you see and how much they cost</div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderPerceptionOverview(panel) {
+  const httpOnlyCount = cookies.filter(c => c.httpOnly).length;
+  const jsVisible = cookies.length - httpOnlyCount;
+  const secureCount = cookies.filter(c => c.secure).length;
+  const noneCount = cookies.filter(c => c.sameSite === 'None').length;
+  const laxCount = cookies.filter(c => c.sameSite === 'Lax').length;
+  const strictCount = cookies.filter(c => c.sameSite === 'Strict').length;
+
+  panel.innerHTML = `
+    <div class="detail-panel">
+      <div class="section-title">&#x1f441; Perception Dimension Overview</div>
+      <p style="color:var(--text-dim);margin-bottom:1.5rem;font-size:.85rem">What can see, read, and intercept each cookie. The gap between what users perceive and what actually exists.</p>
+
+      <div class="overview-grid">
+        <div class="overview-card">
+          <div class="big-num" style="color:var(--danger)">${jsVisible}</div>
+          <div class="card-label">JS-readable (exposed)</div>
+        </div>
+        <div class="overview-card">
+          <div class="big-num" style="color:var(--safe)">${httpOnlyCount}</div>
+          <div class="card-label">HttpOnly (hidden from JS)</div>
+        </div>
+        <div class="overview-card">
+          <div class="big-num" style="color:var(--danger)">${noneCount}</div>
+          <div class="card-label">SameSite=None (cross-site)</div>
+        </div>
+        <div class="overview-card">
+          <div class="big-num" style="color:var(--safe)">${secureCount}</div>
+          <div class="card-label">Secure (HTTPS only)</div>
+        </div>
+      </div>
+
+      <h3 style="font-size:.9rem;margin-bottom:.8rem">Visibility Layers</h3>
+      <div class="perception-layers" style="margin-bottom:1.5rem">
+        <div class="perc-layer" style="background:rgba(239,68,68,.06)">
+          <span class="perc-icon">&#x1f465;</span>
+          <span class="perc-label"><strong>User Awareness</strong> - The user sees NONE of these cookies during normal browsing. Zero perception.</span>
+          <span class="perc-status perc-visible">${cookies.length} hidden</span>
+        </div>
+        <div class="perc-layer">
+          <span class="perc-icon">&#x1f4dc;</span>
+          <span class="perc-label"><strong>JavaScript Access</strong> - ${jsVisible} cookies readable by any script on the page (XSS attack surface)</span>
+          <span class="perc-status ${jsVisible > httpOnlyCount ? 'perc-visible' : 'perc-hidden'}">${jsVisible} exposed</span>
+        </div>
+        <div class="perc-layer">
+          <span class="perc-icon">&#x1f310;</span>
+          <span class="perc-label"><strong>Cross-Site Leakage</strong> - ${noneCount} cookies sent to third-party servers on every request</span>
+          <span class="perc-status ${noneCount > 0 ? 'perc-visible' : 'perc-hidden'}">${noneCount} leaking</span>
+        </div>
+        <div class="perc-layer">
+          <span class="perc-icon">&#x1f6e1;</span>
+          <span class="perc-label"><strong>Network Sniffing</strong> - ${cookies.length - secureCount} cookies transmittable over unencrypted HTTP</span>
+          <span class="perc-status ${cookies.length - secureCount > 0 ? 'perc-visible' : 'perc-hidden'}">${cookies.length - secureCount} vulnerable</span>
+        </div>
+        <div class="perc-layer" style="background:rgba(34,197,94,.04)">
+          <span class="perc-icon">&#x1f50d;</span>
+          <span class="perc-label"><strong>DevTools</strong> - All ${cookies.length} cookies are visible here. This is the only complete view.</span>
+          <span class="perc-status perc-visible">${cookies.length} visible</span>
+        </div>
+      </div>
+
+      <h3 style="font-size:.9rem;margin-bottom:.8rem">SameSite Policy Distribution</h3>
+      <div class="bar-chart">
+        <div class="bar-row"><span class="bar-label">None (open)</span><div class="bar-track"><div class="bar-fill" style="width:${(noneCount/cookies.length)*100}%;background:var(--danger)">${noneCount}</div></div></div>
+        <div class="bar-row"><span class="bar-label">Lax (moderate)</span><div class="bar-track"><div class="bar-fill" style="width:${(laxCount/cookies.length)*100}%;background:var(--warn)">${laxCount}</div></div></div>
+        <div class="bar-row"><span class="bar-label">Strict (locked)</span><div class="bar-track"><div class="bar-fill" style="width:${(strictCount/cookies.length)*100}%;background:var(--safe)">${strictCount}</div></div></div>
+      </div>
+    </div>
+  `;
+}
+
+function renderStructureOverview(panel) {
+  const byEncoding = {};
+  cookies.forEach(c => { byEncoding[c.encoding] = (byEncoding[c.encoding]||0)+1; });
+  const byPattern = {};
+  cookies.forEach(c => { byPattern[c.namePattern] = (byPattern[c.namePattern]||0)+1; });
+  const totalBytes = cookies.reduce((s,c) => s+c.size, 0);
+  const avgSize = Math.round(totalBytes / cookies.length);
+  const maxSize = Math.max(...cookies.map(c => c.size));
+  const dotDomains = cookies.filter(c => c.domain.startsWith('.')).length;
+
+  panel.innerHTML = `
+    <div class="detail-panel">
+      <div class="section-title">&#x1f9ec; Structure Dimension Overview</div>
+      <p style="color:var(--text-dim);margin-bottom:1.5rem;font-size:.85rem">How cookies are encoded, named, scoped, and sized. The technical anatomy.</p>
+
+      <div class="overview-grid">
+        <div class="overview-card">
+          <div class="big-num" style="color:var(--cyan)">${totalBytes}</div>
+          <div class="card-label">Total bytes</div>
+        </div>
+        <div class="overview-card">
+          <div class="big-num" style="color:var(--accent)">${avgSize}B</div>
+          <div class="card-label">Avg cookie size</div>
+        </div>
+        <div class="overview-card">
+          <div class="big-num" style="color:var(--warn)">${maxSize}B</div>
+          <div class="card-label">Largest cookie</div>
+        </div>
+        <div class="overview-card">
+          <div class="big-num" style="color:var(--purple)">${dotDomains}</div>
+          <div class="card-label">Wildcard domains</div>
+        </div>
+      </div>
+
+      <h3 style="font-size:.9rem;margin-bottom:.8rem">Value Encoding Types</h3>
+      <div class="bar-chart">
+        ${Object.entries(byEncoding).sort((a,b)=>b[1]-a[1]).map(([enc, cnt]) => `
+          <div class="bar-row"><span class="bar-label">${esc(enc)}</span><div class="bar-track"><div class="bar-fill" style="width:${(cnt/cookies.length)*100}%;background:var(--cyan)">${cnt}</div></div></div>
+        `).join('')}
+      </div>
+
+      <h3 style="font-size:.9rem;margin:1.5rem 0 .8rem">Name Patterns</h3>
+      <div class="bar-chart">
+        ${Object.entries(byPattern).sort((a,b)=>b[1]-a[1]).map(([pat, cnt]) => `
+          <div class="bar-row"><span class="bar-label" style="width:200px;font-size:.65rem">${esc(pat)}</span><div class="bar-track"><div class="bar-fill" style="width:${(cnt/cookies.length)*100}%;background:var(--purple)">${cnt}</div></div></div>
+        `).join('')}
+      </div>
+
+      <h3 style="font-size:.9rem;margin:1.5rem 0 .8rem">Size Distribution</h3>
+      <div class="bar-chart">
+        ${cookies.sort((a,b)=>b.size-a.size).slice(0,10).map(c => `
+          <div class="bar-row"><span class="bar-label">${esc(c.name)}</span><div class="bar-track"><div class="bar-fill" style="width:${(c.size/maxSize)*100}%;background:${c.source==='Meta' ? 'var(--meta-blue)' : c.source==='Google' ? 'var(--google-red)' : 'var(--accent)'}">${c.size}B</div></div></div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function renderTimeOverview(panel) {
+  const sessionCount = cookies.filter(c => c.isSession).length;
+  const ephemeral = cookies.filter(c => !c.isSession && c.ttlDays <= 1).length;
+  const shortTerm = cookies.filter(c => c.ttlDays > 1 && c.ttlDays <= 30).length;
+  const medTerm = cookies.filter(c => c.ttlDays > 30 && c.ttlDays <= 365).length;
+  const longTerm = cookies.filter(c => c.ttlDays > 365).length;
+  const respawners = cookies.filter(c => c.respawns).length;
+  const sorted = [...cookies].filter(c=>!c.isSession).sort((a,b) => b.ttlDays - a.ttlDays);
+  const maxDays = sorted.length ? sorted[0].ttlDays : 1;
+
+  panel.innerHTML = `
+    <div class="detail-panel">
+      <div class="section-title">&#x23f3; Time Continuity Overview</div>
+      <p style="color:var(--text-dim);margin-bottom:1.5rem;font-size:.85rem">How long each cookie persists and whether it regenerates after deletion.</p>
+
+      <div class="overview-grid">
+        <div class="overview-card">
+          <div class="big-num" style="color:var(--cyan)">${sessionCount}</div>
+          <div class="card-label">Session (tab close)</div>
+        </div>
+        <div class="overview-card">
+          <div class="big-num" style="color:var(--safe)">${ephemeral + shortTerm}</div>
+          <div class="card-label">Short-lived (< 30d)</div>
+        </div>
+        <div class="overview-card">
+          <div class="big-num" style="color:var(--warn)">${medTerm}</div>
+          <div class="card-label">Medium (30d - 1yr)</div>
+        </div>
+        <div class="overview-card">
+          <div class="big-num" style="color:var(--danger)">${longTerm}</div>
+          <div class="card-label">Long-lived (1yr+)</div>
+        </div>
+      </div>
+
+      <div class="privacy-score" style="border-color:var(--danger)">
+        <div class="score-ring score-high" style="font-size:1.1rem">${respawners}</div>
+        <div>
+          <div style="font-weight:600;color:var(--danger)">Zombie Cookies (Respawners)</div>
+          <div style="color:var(--text-dim);font-size:.8rem;margin-top:.2rem">${respawners} of ${cookies.length} cookies regenerate after deletion. Clearing cookies does not stop tracking by these entities.</div>
+        </div>
+      </div>
+
+      <h3 style="font-size:.9rem;margin:1rem 0 .8rem">Lifetime Rankings</h3>
+      <div class="bar-chart">
+        ${sorted.slice(0,12).map(c => {
+          const color = c.ttlDays > 365 ? 'var(--danger)' : c.ttlDays > 90 ? 'var(--warn)' : 'var(--safe)';
+          return `
+          <div class="bar-row">
+            <span class="bar-label">${esc(c.name)}</span>
+            <div class="bar-track">
+              <div class="bar-fill" style="width:${(c.ttlDays/maxDays)*100}%;background:${color}">${c.ttlDays}d</div>
+            </div>
+          </div>
+        `}).join('')}
+      </div>
+
+      <h3 style="font-size:.9rem;margin:1.5rem 0 .8rem">Time Classes</h3>
+      <div class="bar-chart">
+        <div class="bar-row"><span class="bar-label">Session</span><div class="bar-track"><div class="bar-fill" style="width:${(sessionCount/cookies.length)*100}%;background:var(--cyan)">${sessionCount}</div></div></div>
+        <div class="bar-row"><span class="bar-label">Ephemeral</span><div class="bar-track"><div class="bar-fill" style="width:${(ephemeral/cookies.length)*100}%;background:var(--safe)">${ephemeral}</div></div></div>
+        <div class="bar-row"><span class="bar-label">Short (1-30d)</span><div class="bar-track"><div class="bar-fill" style="width:${(shortTerm/cookies.length)*100}%;background:var(--info)">${shortTerm}</div></div></div>
+        <div class="bar-row"><span class="bar-label">Medium (30d-1yr)</span><div class="bar-track"><div class="bar-fill" style="width:${(medTerm/cookies.length)*100}%;background:var(--warn)">${medTerm}</div></div></div>
+        <div class="bar-row"><span class="bar-label">Long (1yr+)</span><div class="bar-track"><div class="bar-fill" style="width:${(longTerm/cookies.length)*100}%;background:var(--danger)">${longTerm}</div></div></div>
+      </div>
+    </div>
+  `;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// EVENT HANDLERS
+// ═══════════════════════════════════════════════════════════════════
+document.querySelectorAll('.dim-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.dim-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    activeDim = tab.dataset.dim;
+    activeCookie = null;
+    renderCookieList();
+    renderDimensionOverview();
+  });
+});
+
+document.getElementById('searchInput').addEventListener('input', (e) => {
+  searchQuery = e.target.value;
+  renderCookieList();
+});
+
+function esc(s) { const d=document.createElement('div'); d.textContent=String(s); return d.innerHTML; }
+
+// ── Initial render ──
+renderStats();
+renderTabs();
+renderCookieList();
+renderDimensionOverview();
+</script>
+</body>
+</html>
